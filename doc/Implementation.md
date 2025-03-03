@@ -70,10 +70,12 @@ Step 2.2. UI Components
 
 ### Step 4. Configuration Implementation
 - Implement component configuration structure
-  - Pass app object as parent to all components
-  - Components access configuration through parent app
-  - Centralized configuration management
-  - Dynamic configuration updates propagation
+  - Create Configuration Property in App Class
+  - Create Update Event inside of Configuration Manager
+  - Pass app object as parent to Database and Window Monitor
+  - Database and Window Monitor access their settings throut the app.Configuration
+  - Database and Window Monitor update if the Configuration Manager Update event gets triggered
+  - The Configuration Manager Update Events gets Triggered on Configuration Manager Save
 
 ## Phase 3: Integration & UI
 
