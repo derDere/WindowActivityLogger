@@ -1,0 +1,4 @@
+# Core dependencies
+pywin32==306  # Windows API wrapper for window title access and system tray functionality
+tkinter  # Built into Python, no version needed
+# SQLite3 is built into Python, no additional package needed

@@ -2,14 +2,14 @@
 
 ## Phase 1: Class Structure Setup
 
-### 1. Project Setup
+### Step 1. Project Setup
 - Create requirements.txt with dependencies:
   - SQLite3
   - TkInter (included in Python)
   - Windows API wrapper (for window title access)
 
-### 2. Create Empty Class Structures
-1. Core Components
+### Step 2. Create Empty Class Structures
+Step 2.1. Core Components
    - Application class
      - Component initialization methods
      - Lifecycle methods (start/stop)
@@ -31,7 +31,7 @@
      - Menu creation
      - Event handlers
 
-2. UI Components
+Step 2.2. UI Components
    - ReportWindow class
      - Time range handling
      - Data display methods
@@ -45,8 +45,8 @@
      - Table formatting
      - HTML assembly
 
-### 3. Create Unit Tests
-1. Core Component Tests
+### Step 3. Create Unit Tests
+Step 3.1. Core Component Tests
    - ConfigurationManager tests
      - File operations
      - Settings validation
@@ -64,7 +64,7 @@
      - Event handling
      - Lifecycle management
 
-2. Generator Tests
+Step 3.2. Generator Tests
    - HTMLExportGenerator tests
      - Chart generation
      - Data formatting
@@ -72,21 +72,21 @@
 
 ## Phase 2: Core Implementation
 
-### 1. Configuration Manager
+### Step 1. Configuration Manager
 - Implement config.json handling
   - File path: %USERPROFILE%\Documents\WindowLogger\config.json
   - Store/load database path
   - Store/load polling interval
   - Store/load regex patterns
 
-### 2. Database Foundation
+### Step 2. Database Foundation
 - Implement database handling
   - Schema: WindowTitles, WindowLog, Projects tables
   - Checksum-based title deduplication
   - Automatic schema validation/repair
   - Backup mechanism for invalid databases
 
-### 3. Window Monitor
+### Step 3. Window Monitor
 - Implement Windows API integration
   - Title polling at configurable intervals
   - System state detection (lock/hibernate)
@@ -95,27 +95,27 @@
 
 ## Phase 3: Integration & UI
 
-### 1. Application Integration
+### Step 1. Application Integration
 - Implement core functionality
   - Component initialization sequence
   - Title change handling with regex filtering
   - Database update coordination
   - Inter-component event routing
 
-### 2. System Tray
+### Step 2. System Tray
 - Implement tray functionality
   - Icon with context menu
   - Window show/hide controls
   - Application exit handling
 
-### 3. Report Window
+### Step 3. Report Window
 - Implement reporting interface
   - Day/Week/Month range selector
   - Project summary with time totals
   - Title listing with project assignment
   - Project creation/assignment controls
 
-### 4. Settings Window
+### Step 4. Settings Window
 - Implement configuration interface
   - Database path setting
   - Polling interval control
@@ -124,14 +124,14 @@
 
 ## Phase 4: Data Visualization
 
-### 1. HTML Export
+### Step 1. HTML Export
 - Implement report generation
   - SVG pie chart for project distribution
   - Formatted time summary tables
   - Self-contained CSS styling
   - No external dependencies
 
-### 2. Report Integration
+### Step 2. Report Integration
 - Implement visualization
   - Export button functionality
   - Data refresh mechanism
