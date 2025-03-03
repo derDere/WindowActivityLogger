@@ -45,31 +45,6 @@ Step 2.2. UI Components
      - Table formatting
      - HTML assembly
 
-### Step 3. Create Unit Tests
-Step 3.1. Core Component Tests
-   - ConfigurationManager tests
-     - File operations
-     - Settings validation
-     - Default values
-   - DatabaseManager tests
-     - Schema creation
-     - CRUD operations
-     - Data integrity
-   - WindowMonitor tests
-     - Title detection
-     - Event triggering
-     - Thread management
-   - Application tests
-     - Component initialization
-     - Event handling
-     - Lifecycle management
-
-Step 3.2. Generator Tests
-   - HTMLExportGenerator tests
-     - Chart generation
-     - Data formatting
-     - File output
-
 ## Phase 2: Core Implementation
 
 ### Step 1. Configuration Manager
@@ -138,9 +113,5 @@ Step 3.2. Generator Tests
   - Project reassignment updates
 
 ## Notes
-- Each class implementation follows TDD pattern:
-  1. Create empty class structure
-  2. Write unit tests
-  3. Implement functionality
 - Regular Git commits with meaningful messages
 - Documentation updates with each implementation
