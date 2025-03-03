@@ -32,7 +32,7 @@ class WindowMonitor:
         self._thread: Optional[threading.Thread] = None
         self._is_running = False
         self._lock = threading.Lock()
-        self._on_title_changed: Optional[Callable[[datetime, str, str], None]] = None
+        self._on_title_changed: Optional[Callable[[datetime, str, str], bool]] = None
         self._last_title = ""
         self._polling_interval = 30  # Default value, will be updated in initialize()
 
@@ -110,7 +110,7 @@ class WindowMonitor:
         # Unregister from configuration updates
         self._app.configuration.remove_update_handler(self._handle_config_update)
 
-    def set_title_changed_callback(self, callback: Callable[[datetime, str, str], None]) -> None:
+    def set_title_changed_callback(self, callback: Callable[[datetime, str, str], bool]) -> None:
         """Set the callback for title change events.
 
         Args:
@@ -118,6 +118,7 @@ class WindowMonitor:
                      timestamp (datetime): When the change occurred
                      old_title (str): Previous window title
                      new_title (str): New window title
+                     Returns bool: True if title should be remembered, False if filtered
         """
         with self._lock:
             self._on_title_changed = callback
@@ -143,12 +144,13 @@ class WindowMonitor:
                 with self._lock:
                     if current_title != self._last_title:
                         if self._on_title_changed is not None:
-                            self._on_title_changed(
+                            # Only update last_title if callback accepts the title
+                            if self._on_title_changed(
                                 datetime.now(),
                                 self._last_title,
                                 current_title
-                            )
-                        self._last_title = current_title
+                            ):
+                                self._last_title = current_title
 
                 # Wait for next check using thread-safe interval access
                 time.sleep(self._get_polling_interval())
