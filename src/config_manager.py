@@ -4,7 +4,7 @@ Configuration manager for handling application settings and JSON configuration f
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 
 class ConfigurationManager:
@@ -16,6 +16,33 @@ class ConfigurationManager:
             "polling_interval": 30,  # Default 30 seconds
             "regex_patterns": []  # Default empty list
         }
+        self._update_handlers: List[Callable[[], None]] = []
+
+    def add_update_handler(self, handler: Callable[[], None]) -> None:
+        """Add a handler to be called when configuration is updated.
+
+        Args:
+            handler: Function to call when configuration changes
+        """
+        if handler not in self._update_handlers:
+            self._update_handlers.append(handler)
+
+    def remove_update_handler(self, handler: Callable[[], None]) -> None:
+        """Remove an update handler.
+
+        Args:
+            handler: Handler to remove
+        """
+        if handler in self._update_handlers:
+            self._update_handlers.remove(handler)
+
+    def _notify_update(self) -> None:
+        """Notify all handlers of a configuration update."""
+        for handler in self._update_handlers:
+            try:
+                handler()
+            except Exception as e:
+                print(f"Error in configuration update handler: {e}")
 
     def load(self) -> bool:
         """Load configuration from file.
@@ -60,6 +87,9 @@ class ConfigurationManager:
             # Save config with pretty printing
             with open(self._config_path, 'w') as f:
                 json.dump(self._config, f, indent=4)
+
+            # Notify handlers of update
+            self._notify_update()
             return True
 
         except Exception as e:

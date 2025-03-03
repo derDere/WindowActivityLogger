@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from .application import Application
 
 class DatabaseManager:
     # SQL statements for schema creation
@@ -44,9 +45,14 @@ class DatabaseManager:
         INSERT OR IGNORE INTO Projects (ID, ProjectName) VALUES (1, 'Misc')
     """
 
-    def __init__(self, db_path: Path):
-        """Initialize the database manager."""
-        self._db_path = db_path
+    def __init__(self, app: Application):
+        """Initialize the database manager.
+
+        Args:
+            app: Parent application instance
+        """
+        self._app = app
+        self._db_path = app.configuration.get_database_path()
         self._connection: Optional[sqlite3.Connection] = None
 
     def _generate_title_id(self, title: str) -> int:
@@ -68,6 +74,9 @@ class DatabaseManager:
             bool: True if initialization was successful, False otherwise
         """
         try:
+            # Register for configuration updates
+            self._app.configuration.add_update_handler(self._handle_config_update)
+
             # Create directory if it doesn't exist
             os.makedirs(self._db_path.parent, exist_ok=True)
 
@@ -100,6 +109,19 @@ class DatabaseManager:
             print(f"Error initializing database: {e}")
             return False
 
+    def _handle_config_update(self) -> None:
+        """Handle configuration updates."""
+        try:
+            new_path = self._app.configuration.get_database_path()
+            if new_path != self._db_path:
+                # Disconnect from current database
+                self.disconnect()
+                # Update path and reconnect
+                self._db_path = new_path
+                self.connect()
+        except Exception as e:
+            print(f"Error handling configuration update: {e}")
+
     def connect(self) -> bool:
         """Establish database connection.
 
@@ -126,6 +148,8 @@ class DatabaseManager:
         if self._connection is not None:
             self._connection.close()
             self._connection = None
+            # Unregister from configuration updates
+            self._app.configuration.remove_update_handler(self._handle_config_update)
 
     def validate_schema(self) -> bool:
         """Validate database schema.

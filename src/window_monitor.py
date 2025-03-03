@@ -13,6 +13,7 @@ import win32gui
 import win32process
 import win32ts
 
+from .application import Application
 
 class WindowMonitor:
     # Windows API constants
@@ -21,18 +22,56 @@ class WindowMonitor:
     BATTERY_FLAG_CHARGING = 0x00000008
     WTS_SESSION_INFO = 24  # WTSSessionInfo constant from winuser.h
 
-    def __init__(self, polling_interval: int = 30):
+    def __init__(self, app: Application):
         """Initialize the window monitor.
 
         Args:
-            polling_interval: Time between window title checks in seconds
+            app: Parent application instance
         """
-        self._polling_interval = max(1, polling_interval)  # Minimum 1 second
+        self._app = app
         self._thread: Optional[threading.Thread] = None
         self._is_running = False
         self._lock = threading.Lock()
         self._on_title_changed: Optional[Callable[[datetime, str, str], None]] = None
         self._last_title = ""
+        self._polling_interval = 30  # Default value, will be updated in initialize()
+
+    def initialize(self) -> bool:
+        """Initialize the window monitor.
+
+        Returns:
+            bool: True if initialization was successful, False otherwise
+        """
+        try:
+            # Set initial polling interval
+            with self._lock:
+                self._polling_interval = self._app.configuration.get_polling_interval()
+
+            # Register for configuration updates
+            self._app.configuration.add_update_handler(self._handle_config_update)
+            return True
+        except Exception as e:
+            print(f"Error initializing window monitor: {e}")
+            return False
+
+    def _handle_config_update(self) -> None:
+        """Handle configuration updates."""
+        try:
+            new_interval = self._app.configuration.get_polling_interval()
+            with self._lock:
+                if new_interval != self._polling_interval:
+                    self._polling_interval = max(1, new_interval)  # Ensure minimum 1 second
+        except Exception as e:
+            print(f"Error handling configuration update: {e}")
+
+    def _get_polling_interval(self) -> int:
+        """Get the current polling interval in a thread-safe way.
+
+        Returns:
+            Current polling interval in seconds
+        """
+        with self._lock:
+            return self._polling_interval
 
     def start(self) -> bool:
         """Start the monitoring thread.
@@ -65,8 +104,11 @@ class WindowMonitor:
             self._is_running = False
 
         if self._thread is not None:
-            self._thread.join(timeout=self._polling_interval + 1)
+            self._thread.join(timeout=self._get_polling_interval() + 1)
             self._thread = None
+
+        # Unregister from configuration updates
+        self._app.configuration.remove_update_handler(self._handle_config_update)
 
     def set_title_changed_callback(self, callback: Callable[[datetime, str, str], None]) -> None:
         """Set the callback for title change events.
@@ -91,7 +133,7 @@ class WindowMonitor:
 
                 # Skip if system is locked or in sleep mode
                 if self._is_system_inactive():
-                    time.sleep(self._polling_interval)
+                    time.sleep(self._get_polling_interval())
                     continue
 
                 # Get current window title
@@ -108,12 +150,12 @@ class WindowMonitor:
                             )
                         self._last_title = current_title
 
-                # Wait for next check
-                time.sleep(self._polling_interval)
+                # Wait for next check using thread-safe interval access
+                time.sleep(self._get_polling_interval())
 
             except Exception as e:
                 print(f"Error in monitor loop: {e}")
-                time.sleep(self._polling_interval)
+                time.sleep(self._get_polling_interval())
 
     def _get_active_window_title(self) -> str:
         """Get the current active window title.
