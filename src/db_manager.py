@@ -9,7 +9,7 @@ import sqlite3
 import zlib
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Iterator, Any
+from typing import List, Optional, Tuple, Iterator, Any, Dict
 
 from .application import Application
 
@@ -450,3 +450,25 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error during backup and repair: {e}")
             return False
+
+    def get_projects(self) -> Dict[int, str]:
+        """Get dictionary of project IDs to names.
+
+        Returns:
+            Dictionary mapping project IDs to their names, sorted by name
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT ID, ProjectName
+                    FROM Projects
+                    ORDER BY ProjectName
+                    """
+                )
+                return {row['ID']: row['ProjectName'] for row in cursor.fetchall()}
+
+        except Exception as e:
+            print(f"Error getting projects: {e}")
+            return {}
