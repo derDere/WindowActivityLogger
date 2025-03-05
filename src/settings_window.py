@@ -149,11 +149,13 @@ class SettingsWindow:
     def _handle_browse_db(self) -> None:
         """Handle database path browse button click."""
         initial_dir = Path(self._db_path_var.get()).parent
-        filepath = filedialog.asksaveasfilename(
+        filepath = filedialog.askopenfilename(
             initialdir=initial_dir,
             title="Select Database Location",
-            filetypes=[("SQLite Database", "*.db")],
-            defaultextension=".db"
+            filetypes=[
+                ("SQLite Database", "*.db;*.sqlite"),
+                ("All Files", "*.*")
+            ]
         )
         if filepath:
             self._db_path_var.set(filepath)
