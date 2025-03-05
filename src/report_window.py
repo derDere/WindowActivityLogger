@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, List, Tuple, cast
 from datetime import datetime, timedelta
 from pathlib import Path
+from PIL import Image, ImageTk
 
 from db_manager import DatabaseManager
 from html_export import HTMLExportGenerator
@@ -116,13 +117,44 @@ class ReportWindow:
         export_btn.pack(side=tk.RIGHT)
 
     def _create_pie_chart(self, parent: ttk.Frame) -> None:
-        """Create the pie chart area (placeholder)."""
-        chart_frame = ttk.LabelFrame(parent, text="Project Distribution", padding="5")
-        chart_frame.pack(fill=tk.X, pady=(0, 10))
+        """Create the pie chart area."""
+        self.chart_frame = ttk.LabelFrame(parent, text="Project Distribution", padding="5")
+        self.chart_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Placeholder for pie chart (100x100 pixels)
-        canvas = tk.Canvas(chart_frame, width=100, height=100, bg='white')
-        canvas.pack(pady=10)
+        # Create canvas for pie chart (400x400 pixels)
+        self.chart_canvas = tk.Canvas(self.chart_frame, width=400, height=400, bg='white')
+        self.chart_canvas.pack(pady=10)
+        self.chart_image = None  # Store reference to prevent garbage collection
+
+    def _update_pie_chart(self, start_time: datetime, end_time: datetime) -> None:
+        """Update the pie chart with new data."""
+        if not hasattr(self, 'chart_canvas') or not self.chart_canvas.winfo_exists():
+            return
+
+        try:
+            # Generate chart image
+            pil_image = self._html_generator.generate_project_chart_png(start_time, end_time)
+            
+            # Convert PIL image to Tkinter PhotoImage
+            self.chart_image = ImageTk.PhotoImage(pil_image)
+            
+            # Clear canvas and display new image
+            self.chart_canvas.delete("all")
+            self.chart_canvas.create_image(
+                200, 200,  # Center of canvas
+                image=self.chart_image,
+                anchor=tk.CENTER
+            )
+        except Exception as e:
+            print(f"Error updating pie chart: {e}")
+            # Show error message in canvas
+            self.chart_canvas.delete("all")
+            self.chart_canvas.create_text(
+                200, 200,
+                text="Error generating chart",
+                fill="red",
+                anchor=tk.CENTER
+            )
 
     def _create_project_table(self, parent: ttk.Frame) -> None:
         """Create the project summary table."""
@@ -296,6 +328,9 @@ class ReportWindow:
             range_name = self._time_range_var.get() if self._time_range_var else "Day"
             end_time = datetime.now()
             start_time = end_time - TIME_RANGES[range_name]
+
+            # Update pie chart
+            self._update_pie_chart(start_time, end_time)
 
             # Update project summary
             self._update_project_data(start_time, end_time)

@@ -4,6 +4,8 @@ HTML export generator for creating self-contained activity reports.
 from datetime import datetime, timedelta
 import math
 from typing import List, Tuple
+import io
+from PIL import Image, ImageDraw, ImageFont
 
 from db_manager import DatabaseManager
 
@@ -151,6 +153,99 @@ class HTMLExportGenerator:
         
         svg += '</svg>'
         return svg
+
+    def generate_project_chart_png(self, start_time: datetime, end_time: datetime, size: int = 400) -> Image.Image:
+        """Generate a PNG image of the project distribution pie chart.
+        
+        Args:
+            start_time: Start of the reporting period
+            end_time: End of the reporting period
+            size: Size of the output image in pixels (square)
+
+        Returns:
+            PIL Image object containing the pie chart
+        """
+        # Get data
+        project_data = self._db_manager.get_project_summary(start_time, end_time)
+        chart_data = [(name, duration) for _, name, duration in project_data]
+        
+        # Create image with 2x size for antialiasing
+        actual_size = size * 2
+        image = Image.new('RGB', (actual_size, actual_size), 'white')
+        draw = ImageDraw.Draw(image)
+        
+        try:
+            # Try to load Arial font with larger size for antialiasing
+            font = ImageFont.truetype("arial.ttf", 24)  # 2x size for antialiasing
+        except:
+            font = ImageFont.load_default()
+
+        center = actual_size // 2
+        radius = int(actual_size * 0.35)  # Smaller radius to leave room for legend
+        
+        if not chart_data:
+            # Draw empty circle and "No data" message
+            draw.ellipse([center - radius, center - radius, 
+                         center + radius, center + radius], 
+                         outline='#ddd', width=2)
+            draw.text((center, center), "No data available", 
+                     fill='#666', anchor="mm", font=font)
+            # Resize back to original size with antialiasing
+            return image.resize((size, size), Image.ANTIALIAS)
+
+        # Calculate total for percentages
+        total = sum(duration for _, duration in chart_data)
+        
+        # Define colors
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', 
+                 '#D4A5A5', '#9DE0AD', '#FF9999', '#45B7D1', '#E9D985']
+        
+        # Draw pie slices
+        start_angle = -90  # Start at top (negative 90 degrees)
+        for i, (name, duration) in enumerate(chart_data):
+            percentage = (duration / total) * 100
+            angle = (duration / total) * 360
+            
+            # Draw slice with antialiasing
+            end_angle = start_angle + angle
+            draw.pieslice([center - radius, center - radius,
+                          center + radius, center + radius],
+                         start=start_angle, end=end_angle,
+                         fill=colors[i % len(colors)], outline='white', width=2)
+            
+            # Draw percentage if slice is big enough
+            if percentage >= 5:
+                # Calculate position for percentage label
+                label_angle = math.radians(start_angle + angle/2)
+                label_radius = radius * 0.7
+                x = center + label_radius * math.cos(label_angle)
+                y = center + label_radius * math.sin(label_angle)
+                
+                # Draw percentage text
+                text = f"{percentage:.1f}%"
+                # Draw text with slight shadow for better readability
+                draw.text((x+2, y+2), text, fill='black', anchor="mm", font=font)
+                draw.text((x, y), text, fill='white', anchor="mm", font=font)
+            
+            start_angle += angle
+        
+        # Draw legend with larger font
+        legend_y = actual_size - 240  # Start legend higher up (2x position)
+        legend_x = 20  # 2x position
+        for i, (name, duration) in enumerate(chart_data):
+            percentage = (duration / total) * 100
+            color = colors[i % len(colors)]
+            y = legend_y + (i * 40)  # 2x spacing
+            
+            # Draw color box
+            draw.rectangle([legend_x, y, legend_x + 30, y + 30], fill=color)  # 2x size
+            
+            # Draw text
+            text = f"{name} ({percentage:.1f}%)"
+            draw.text((legend_x + 50, y + 16), text, fill='#333', anchor="lm", font=font)
+
+        # Resize the image back to original size with antialiasing
+        return image.resize((size, size), Image.ANTIALIAS)
 
     def _generate_project_table(self, project_data: List[Tuple[int, str, float]]) -> str:
         """Generate HTML table for project summary."""
