@@ -66,6 +66,9 @@ class Application:
             if not self._config_manager.load():
                 return False
 
+            # Register for configuration updates
+            self._config_manager.add_update_handler(self._handle_config_changed)
+
             # Import here to avoid circular dependency
             from db_manager import DatabaseManager
 
@@ -225,3 +228,20 @@ class Application:
         if self._settings_window:
             # Queue the window show operation to run in main thread
             self._queue_ui_action(lambda: self._settings_window.show())
+
+    def _handle_config_changed(self) -> None:
+        """Handle configuration changes from any source."""
+        try:
+            # Queue UI actions to happen in the main thread
+            def update_actions():
+                # Config changes may require UI updates
+                if self._report_window:
+                    self._report_window.refresh_data()
+                    
+                # Any future UI component updates can be added here
+                pass
+            
+            self._queue_ui_action(update_actions)
+
+        except Exception as e:
+            print(f"Error handling configuration change: {e}")

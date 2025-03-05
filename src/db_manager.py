@@ -131,7 +131,33 @@ class DatabaseManager:
         try:
             new_path = self._app.configuration.get_database_path()
             if new_path != self._db_path:
+                # Save the old path in case we need to restore it
+                old_path = self._db_path
                 self._db_path = new_path
+
+                # If the new database exists, validate and repair if needed
+                if new_path.exists():
+                    if not self.validate_schema():
+                        # Invalid schema, attempt backup and repair
+                        if not self.backup_and_repair():
+                            # If repair failed, restore old path and report error
+                            self._db_path = old_path
+                            print("Failed to repair database at new location, reverting to previous database")
+                            return
+                else:
+                    # New database file, create directory and initialize
+                    try:
+                        os.makedirs(new_path.parent, exist_ok=True)
+                        if not self.initialize():
+                            # If initialization failed, restore old path
+                            self._db_path = old_path
+                            print("Failed to initialize new database, reverting to previous database")
+                            return
+                    except Exception as e:
+                        self._db_path = old_path
+                        print(f"Error creating new database: {e}")
+                        return
+
         except Exception as e:
             print(f"Error handling configuration update: {e}")
 

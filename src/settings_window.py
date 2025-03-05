@@ -256,10 +256,11 @@ class SettingsWindow:
             self._config_manager.set_polling_interval(int(self._interval_var.get()))
             self._config_manager.set_regex_patterns(list(self._pattern_list.get(0, tk.END)))
 
-            # Save to file
+            # Save config and notify handlers (this triggers _handle_config_changed in Application)
             if self._config_manager.save():
-                messagebox.showinfo("Success", "Settings saved successfully")
+                # Hide window after successful save and update
                 self.hide()
+                messagebox.showinfo("Success", "Settings saved successfully")
             else:
                 messagebox.showerror("Error", "Failed to save settings")
 
