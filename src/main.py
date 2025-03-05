@@ -28,18 +28,21 @@ def main() -> int:
             return 1
 
         # Set up signal handlers
-        # def handle_signal(signum, frame):
-        #     app.stop()
-        #     sys.exit(0)
-        # 
-        # signal.signal(signal.SIGINT, handle_signal)
-        # signal.signal(signal.SIGTERM, handle_signal)
+        def handle_signal(signum, frame):
+            print("\nReceived exit signal, shutting down...")
+            app.stop()
+            sys.exit(0)
+        
+        signal.signal(signal.SIGINT, handle_signal)
+        signal.signal(signal.SIGTERM, handle_signal)
 
         # Start the application and keep it running
         app.start()
-        while app._is_running:  # Check application's running state
-            time.sleep(0.05)  # Sleep to prevent high CPU usage
+        while app.is_running:  # Use property instead of protected member
+            time.sleep(0.1)  # More responsive sleep interval
 
+        # Clean exit
+        app.stop()  # Ensure everything is stopped
         return 0
 
     except Exception as e:

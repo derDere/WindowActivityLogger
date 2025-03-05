@@ -26,6 +26,11 @@ class Application:
         self._is_running = False
 
     @property
+    def is_running(self) -> bool:
+        """Whether the application is currently running."""
+        return self._is_running
+
+    @property
     def configuration(self) -> ConfigurationManager:
         """Get the configuration manager.
 
@@ -91,15 +96,18 @@ class Application:
 
     def stop(self) -> None:
         """Stop the application and all its components."""
+        if not self._is_running:
+            return  # Already stopped
+
         self._is_running = False
 
-        # Hide UI windows
+        # Hide UI windows first to prevent any new operations
         if self._report_window:
             self._report_window.hide()
         if self._settings_window:
             self._settings_window.hide()
 
-        # Stop core components
+        # Stop background components in reverse order of initialization
         if self._window_monitor:
             self._window_monitor.stop()
         if self._tray_interface:
@@ -138,14 +146,10 @@ class Application:
     def _handle_exit_request(self) -> None:
         """Handle application exit request from system tray."""
         try:
-            # Stop all components first
-            self.stop()
-            # Set a flag to stop the main loop
-            self._is_running = False
+            self.stop()  # This will set _is_running to False and stop all components
         except Exception as e:
             print(f"Error during exit: {e}")
-            # Ensure we still exit even if there's an error
-            self._is_running = False
+            self._is_running = False  # Ensure we still exit even if there's an error
 
     def _handle_show_report(self) -> None:
         """Handle show report window request from system tray."""

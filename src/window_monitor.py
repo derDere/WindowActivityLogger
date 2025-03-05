@@ -134,7 +134,7 @@ class WindowMonitor:
 
                 # Skip if system is locked or in sleep mode
                 if self._is_system_inactive():
-                    time.sleep(self._get_polling_interval())
+                    self._interruptible_sleep(self._get_polling_interval())
                     continue
 
                 # Get current window title
@@ -152,12 +152,26 @@ class WindowMonitor:
                             ):
                                 self._last_title = current_title
 
-                # Wait for next check using thread-safe interval access
-                time.sleep(self._get_polling_interval())
+                # Wait for next check using interruptible sleep
+                self._interruptible_sleep(self._get_polling_interval())
 
             except Exception as e:
                 print(f"Error in monitor loop: {e}")
-                time.sleep(self._get_polling_interval())
+                self._interruptible_sleep(self._get_polling_interval())
+
+    def _interruptible_sleep(self, seconds: int) -> None:
+        """Sleep for the specified duration but check is_running every 100ms.
+        
+        Args:
+            seconds: Total time to sleep in seconds
+        """
+        slept = 0
+        while slept < seconds:
+            with self._lock:
+                if not self._is_running:
+                    return
+            time.sleep(0.1)  # Sleep in small intervals
+            slept += 0.1
 
     def _get_active_window_title(self) -> str:
         """Get the current active window title.
