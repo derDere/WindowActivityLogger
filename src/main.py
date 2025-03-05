@@ -28,17 +28,17 @@ def main() -> int:
             return 1
 
         # Set up signal handlers
-        def handle_signal(signum, frame):
-            app.stop()
-            sys.exit(0)
-
-        signal.signal(signal.SIGINT, handle_signal)
-        signal.signal(signal.SIGTERM, handle_signal)
+        # def handle_signal(signum, frame):
+        #     app.stop()
+        #     sys.exit(0)
+        # 
+        # signal.signal(signal.SIGINT, handle_signal)
+        # signal.signal(signal.SIGTERM, handle_signal)
 
         # Start the application and keep it running
         app.start()
-        while True:
-            time.sleep(1)  # Sleep to prevent high CPU usage
+        while app._is_running:  # Check application's running state
+            time.sleep(0.05)  # Sleep to prevent high CPU usage
 
         return 0
 

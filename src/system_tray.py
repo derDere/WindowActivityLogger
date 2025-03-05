@@ -74,6 +74,8 @@ class SystemTrayInterface:
 
     def _handle_exit(self, _icon: Icon, _item: MenuItem) -> None:
         """Handle exit menu item click."""
+        if self._icon:
+            self._icon.stop()  # Stop the icon first
         if self._on_exit:
             self._on_exit()
 

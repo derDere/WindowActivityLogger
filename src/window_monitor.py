@@ -130,7 +130,7 @@ class WindowMonitor:
                 # Check if we should stop
                 with self._lock:
                     if not self._is_running:
-                        break
+                        return
 
                 # Skip if system is locked or in sleep mode
                 if self._is_system_inactive():

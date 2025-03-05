@@ -137,7 +137,15 @@ class Application:
 
     def _handle_exit_request(self) -> None:
         """Handle application exit request from system tray."""
-        self.stop()
+        try:
+            # Stop all components first
+            self.stop()
+            # Set a flag to stop the main loop
+            self._is_running = False
+        except Exception as e:
+            print(f"Error during exit: {e}")
+            # Ensure we still exit even if there's an error
+            self._is_running = False
 
     def _handle_show_report(self) -> None:
         """Handle show report window request from system tray."""
