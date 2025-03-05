@@ -2,7 +2,7 @@
 
 A Python-based background service that monitors and logs active window titles on Windows systems to help track time spent on different applications and projects.
 
-![Report Window Screenshot](gfx/report_window.png)
+![Example Screenshot](gfx/example.png)
 
 ## Features
 - **Background Monitoring**: Tracks active window titles with configurable polling interval
