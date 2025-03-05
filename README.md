@@ -16,15 +16,21 @@ A Python-based background service that monitors and logs active window titles on
 ## Screenshots
 
 ### Report Window
+
 ![Report Window](gfx/report_window.png)
+
 View activity summaries with interactive pie charts and project management.
 
 ### Settings
+
 ![Settings Window](gfx/settings_window.png)
+
 Configure database location, polling interval, and title filters.
 
 ### SQL Query Interface
+
 ![SQL Query](gfx/sql_window.png)
+
 Direct database access with syntax highlighting and result tabs.
 
 ## Requirements
