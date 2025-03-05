@@ -3,6 +3,7 @@ System tray interface for providing application controls.
 """
 from pathlib import Path
 from typing import Callable, Optional, Any
+import threading
 import pystray
 from PIL import Image
 
@@ -17,6 +18,7 @@ class SystemTrayInterface:
         self._on_exit: Optional[Callable[[], None]] = None
         self._on_show_report: Optional[Callable[[], None]] = None
         self._on_show_settings: Optional[Callable[[], None]] = None
+        self._callback_lock = threading.Lock()
 
     def initialize(self) -> bool:
         """Initialize the system tray icon and menu."""
@@ -62,29 +64,35 @@ class SystemTrayInterface:
 
     def set_exit_callback(self, callback: Callable[[], None]) -> None:
         """Set the callback for exit menu item."""
-        self._on_exit = callback
+        with self._callback_lock:
+            self._on_exit = callback
 
     def set_show_report_callback(self, callback: Callable[[], None]) -> None:
         """Set the callback for show report menu item."""
-        self._on_show_report = callback
+        with self._callback_lock:
+            self._on_show_report = callback
 
     def set_show_settings_callback(self, callback: Callable[[], None]) -> None:
         """Set the callback for show settings menu item."""
-        self._on_show_settings = callback
+        with self._callback_lock:
+            self._on_show_settings = callback
 
     def _handle_exit(self, _icon: Icon, _item: MenuItem) -> None:
         """Handle exit menu item click."""
-        if self._icon:
-            self._icon.stop()  # Stop the icon first
-        if self._on_exit:
-            self._on_exit()
+        with self._callback_lock:
+            if self._on_exit:
+                self._on_exit()  # Call exit callback first
+            if self._icon:
+                self._icon.stop()  # Then stop the icon
 
     def _handle_show_report(self, _icon: Icon, _item: MenuItem) -> None:
         """Handle show report menu item click."""
-        if self._on_show_report:
-            self._on_show_report()
+        with self._callback_lock:
+            if self._on_show_report:
+                self._on_show_report()
 
     def _handle_show_settings(self, _icon: Icon, _item: MenuItem) -> None:
         """Handle show settings menu item click."""
-        if self._on_show_settings:
-            self._on_show_settings()
+        with self._callback_lock:
+            if self._on_show_settings:
+                self._on_show_settings()

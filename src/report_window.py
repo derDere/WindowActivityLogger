@@ -4,10 +4,13 @@ Report window for displaying activity statistics and managing projects.
 import tkinter as tk
 from tkinter import ttk
 from tkinter.messagebox import showerror
-from typing import Optional, Dict, List, Tuple, cast
+from typing import Optional, Dict, List, Tuple, cast, TYPE_CHECKING
 from datetime import datetime, timedelta
 
 from db_manager import DatabaseManager
+
+if TYPE_CHECKING:
+    from application import Application
 
 # Time range options
 TIME_RANGES = {
@@ -25,23 +28,48 @@ class ReportWindow:
         self._project_tree: Optional[ttk.Treeview] = None
         self._title_tree: Optional[ttk.Treeview] = None
 
+    @property
+    def _app(self) -> 'Application':
+        """Get the application instance safely."""
+        return self._db_manager._app
+
     def show(self) -> None:
         """Show the report window."""
         if self._window is None:
-            # Create new window
-            self._window = tk.Toplevel()
+            # Create new window using the application's root
+            self._window = tk.Toplevel(self._app.root)
             self._window.title("Activity Report")
             self._window.minsize(800, 600)
+            self._window.protocol("WM_DELETE_WINDOW", self.hide)  # Handle window close button
+
+            # Set window icon if available
+            try:
+                self._window.iconbitmap(str(self._app.root.iconbitmap()))
+            except:
+                pass  # Ignore icon setting errors
 
             # Create widgets
             self._create_widgets()
 
-            # Update data
-            self.refresh_data()
+            # Configure grid weights for resizing
+            self._window.columnconfigure(0, weight=1)
+            self._window.rowconfigure(0, weight=1)
+
+            # Center window on screen
+            self._window.update_idletasks()
+            width = self._window.winfo_width()
+            height = self._window.winfo_height()
+            x = (self._window.winfo_screenwidth() - width) // 2
+            y = (self._window.winfo_screenheight() - height) // 2
+            self._window.geometry(f"{width}x{height}+{x}+{y}")
+
+            # Schedule data refresh after window is shown
+            self._window.after(100, self.refresh_data)
         else:
-            # Window exists, just bring it to front
+            # Window exists, just bring it to front and refresh
             self._window.lift()
             self._window.focus_force()
+            self.refresh_data()
 
     def hide(self) -> None:
         """Hide the report window."""
@@ -247,10 +275,10 @@ class ReportWindow:
         if not self._window:
             return
 
-        # Create dialog
-        dialog = tk.Toplevel(self._window)
+        # Create dialog using the application's root as parent
+        dialog = tk.Toplevel(self._app.root)
         dialog.title("Assign Project")
-        dialog.transient(self._window)
+        dialog.transient(self._window)  # Make dialog modal to report window
         dialog.grab_set()
 
         # Create widgets

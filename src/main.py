@@ -39,6 +39,8 @@ def main() -> int:
         # Start the application and keep it running
         app.start()
         while app.is_running:  # Use property instead of protected member
+            # Process any pending UI events
+            app.process_ui_events()
             time.sleep(0.1)  # More responsive sleep interval
 
         # Clean exit

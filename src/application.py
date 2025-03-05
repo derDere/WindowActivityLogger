@@ -3,8 +3,10 @@ Main application class that coordinates all components of the Window Activity Lo
 """
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Callable
 import re
+import queue
+import tkinter as tk
 from config_manager import ConfigurationManager
 from window_monitor import WindowMonitor
 from system_tray import SystemTrayInterface
@@ -24,6 +26,21 @@ class Application:
         self._report_window: Optional[ReportWindow] = None
         self._settings_window: Optional[SettingsWindow] = None
         self._is_running = False
+        self._ui_queue = queue.Queue()
+        
+        # Create root window but keep it hidden
+        self._root = tk.Tk()
+        self._root.withdraw()  # Hide the root window
+        # Prevent the root window from being shown in taskbar
+        self._root.attributes("-alpha", 0)  # Make it fully transparent
+        self._root.attributes("-topmost", True)  # Keep it on top
+        self._root.overrideredirect(True)  # Remove window decorations
+        self._root.geometry("0x0+0+0")  # Make it tiny and place in corner
+
+    @property
+    def root(self) -> tk.Tk:
+        """Get the Tk root window."""
+        return self._root
 
     @property
     def is_running(self) -> bool:
@@ -45,7 +62,7 @@ class Application:
         """Initialize all components of the application."""
         try:
             # Initialize and load configuration
-            self._config_manager = ConfigurationManager()
+            self._config_manager = ConfigurationManager(self)
             if not self._config_manager.load():
                 return False
 
@@ -113,6 +130,38 @@ class Application:
         if self._tray_interface:
             self._tray_interface.cleanup()
 
+        # Destroy root window last
+        if self._root:
+            self._root.quit()
+            self._root.destroy()
+
+    def process_ui_events(self) -> None:
+        """Process any pending UI events in the main thread."""
+        try:
+            # Process Tkinter events
+            self._root.update()
+            
+            # Process queued UI actions
+            while True:
+                # Get all pending UI actions without blocking
+                action = self._ui_queue.get_nowait()
+                if action:
+                    action()
+                self._ui_queue.task_done()
+        except queue.Empty:
+            pass  # No more events to process
+        except tk.TclError:
+            # Root window was destroyed, exit the application
+            self._is_running = False
+
+    def _queue_ui_action(self, action: Callable[[], None]) -> None:
+        """Queue a UI action to be executed in the main thread.
+        
+        Args:
+            action: The function to execute in the main thread
+        """
+        self._ui_queue.put(action)
+
     def _handle_window_title_changed(self, timestamp: datetime, old_title: str, new_title: str) -> bool:
         """Handle window title change events.
 
@@ -154,10 +203,11 @@ class Application:
     def _handle_show_report(self) -> None:
         """Handle show report window request from system tray."""
         if self._report_window:
-            self._report_window.show()
-            self._report_window.refresh_data()
+            # Queue the window show operation to run in main thread
+            self._queue_ui_action(lambda: self._report_window.show())
 
     def _handle_show_settings(self) -> None:
         """Handle show settings window request from system tray."""
         if self._settings_window:
-            self._settings_window.show()
+            # Queue the window show operation to run in main thread
+            self._queue_ui_action(lambda: self._settings_window.show())

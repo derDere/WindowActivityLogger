@@ -4,12 +4,19 @@ Configuration manager for handling application settings and JSON configuration f
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional, Callable, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from application import Application
 
 class ConfigurationManager:
-    def __init__(self):
-        """Initialize the configuration manager."""
+    def __init__(self, app: 'Application'):
+        """Initialize the configuration manager.
+        
+        Args:
+            app: Parent application instance
+        """
+        self._app = app
         self._config_path = self._get_config_file_path()
         self._config: Dict[str, Any] = {
             "database_path": str(self._get_default_database_path()),
