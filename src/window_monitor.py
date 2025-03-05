@@ -208,18 +208,14 @@ class WindowMonitor:
             bool: True if system is locked or sleeping, False otherwise
         """
         try:
-            # Check if workstation is locked
+            # Check if workstation is locked using a different approach
             session_id = win32ts.WTSGetActiveConsoleSessionId()
             if session_id == 0xFFFFFFFF:  # No active session
                 return True
 
-            # Check if screen is locked using WTS session state
-            session_info = win32ts.WTSQuerySessionInformation(
-                self.WTS_CURRENT_SERVER_HANDLE,
-                session_id,
-                self.WTS_SESSION_INFO
-            )
-            if session_info and int(session_info) & self.WTS_SESSIONSTATE_LOCKED:
+            # Check if screen is locked by trying to get the foreground window
+            foreground_window = win32gui.GetForegroundWindow()
+            if not foreground_window:
                 return True
 
             # Check if system is in power saving mode
