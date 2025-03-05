@@ -6,9 +6,46 @@ from tkinter import ttk, messagebox
 from typing import Optional, List, Any, Dict, TYPE_CHECKING
 from pathlib import Path
 from PIL import Image, ImageTk
+from pygments import lex
+from pygments.lexers import SqlLexer
+from pygments.token import Token
 
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
+
+class SQLText(tk.Text):
+    """Text widget with SQL syntax highlighting"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tag_configure("keyword", foreground="#0000FF")
+        self.tag_configure("string", foreground="#008000")
+        self.tag_configure("number", foreground="#FF0000")
+        self.tag_configure("comment", foreground="#808080")
+        self.bind('<KeyRelease>', self._highlight)
+        self.bind('<Enter>', self._highlight)
+
+    def _highlight(self, event=None):
+        """Apply syntax highlighting to the text"""
+        text = self.get("1.0", tk.END)
+        self.tag_remove("keyword", "1.0", tk.END)
+        self.tag_remove("string", "1.0", tk.END)
+        self.tag_remove("number", "1.0", tk.END)
+        self.tag_remove("comment", "1.0", tk.END)
+
+        for token, content in lex(text, SqlLexer()):
+            if not content:
+                continue
+            current_index = self.search(content, "1.0", tk.END)
+            while current_index:
+                if token in Token.Keyword:
+                    self.tag_add("keyword", current_index, f"{current_index}+{len(content)}c")
+                elif token in Token.Literal.String:
+                    self.tag_add("string", current_index, f"{current_index}+{len(content)}c")
+                elif token in Token.Literal.Number:
+                    self.tag_add("number", current_index, f"{current_index}+{len(content)}c")
+                elif token in Token.Comment:
+                    self.tag_add("comment", current_index, f"{current_index}+{len(content)}c")
+                current_index = self.search(content, f"{current_index}+1c", tk.END)
 
 class SQLQueryWindow:
     def __init__(self, db_manager: 'DatabaseManager'):
@@ -52,13 +89,14 @@ class SQLQueryWindow:
             execute_btn = ttk.Button(top_frame, text="Execute Query", command=self._execute_query)
             execute_btn.pack(side=tk.LEFT)
 
-            # Query text area
-            self._query_text = tk.Text(main_frame, height=10, wrap=tk.WORD)
+            # Query text area with syntax highlighting
+            self._query_text = SQLText(main_frame, height=10, wrap=tk.WORD)
             self._query_text.pack(fill=tk.X, pady=(0, 10))
             self._query_text.insert("1.0", """/* WARNING: Only modify these SQL queries if you know what you are doing.
    Incorrect queries could potentially damage your database. */
 
 SELECT name FROM sqlite_master;""")
+            self._query_text._highlight()  # Initial highlighting
 
             # Result notebook for multiple result sets
             self._result_notebook = ttk.Notebook(main_frame)
