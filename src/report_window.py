@@ -23,6 +23,7 @@ class ReportWindow:
         self._time_range_var: Optional[tk.StringVar] = None
         self._project_tree: Optional[ttk.Treeview] = None
         self._title_tree: Optional[ttk.Treeview] = None
+        self._active_combo: Optional[ttk.Combobox] = None  # Track active combobox
 
     @property
     def _app(self):
@@ -171,11 +172,25 @@ class ReportWindow:
 
         # Add project combobox for each row on single click
         self._title_tree.bind('<Button-1>', self._handle_title_click)
+        self._title_tree.bind('<FocusOut>', lambda e: self._destroy_active_combo())
+
+    def _destroy_active_combo(self) -> None:
+        """Destroy the active combobox if it exists and isn't focused."""
+        if self._active_combo:
+            # Only destroy if the combo or its popup isn't focused
+            focused = self._window.focus_get()
+            if focused != self._active_combo and str(focused).startswith(str(self._active_combo)):
+                return
+            self._active_combo.destroy()
+            self._active_combo = None
 
     def _handle_title_click(self, event) -> None:
         """Handle clicks in the title table to show project combobox."""
         if not self._title_tree:
             return
+
+        # Destroy any existing combobox first
+        self._destroy_active_combo()
 
         # Get clicked region
         region = self._title_tree.identify_region(event.x, event.y)
@@ -203,6 +218,7 @@ class ReportWindow:
 
         # Create and position combobox
         combo = ttk.Combobox(self._title_tree, width=20, state="readonly")
+        self._active_combo = combo
         
         # Get all projects
         projects = self._db_manager.get_projects()
@@ -215,12 +231,12 @@ class ReportWindow:
 
         # Position combobox over cell
         combo.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
-        combo.focus_set()
-
+        
         def on_select(event=None):
             new_project = combo.get()
             if new_project == "<New>":
                 combo.destroy()
+                self._active_combo = None
                 self._handle_new_project(title)
             else:
                 # Find project ID by name
@@ -231,13 +247,14 @@ class ReportWindow:
                 title_id = self._db_manager._generate_title_id(title)
                 if self._db_manager.assign_project(title_id, project_id):
                     combo.destroy()
+                    self._active_combo = None
                     self.refresh_data()
 
-        def on_focus_out(event=None):
-            combo.destroy()
-
         combo.bind('<<ComboboxSelected>>', on_select)
-        combo.bind('<FocusOut>', on_focus_out)
+        
+        # Show dropdown immediately
+        combo.focus_set()
+        self._title_tree.after(10, combo.event_generate, '<Button-1>')
 
     def refresh_data(self) -> None:
         """Refresh all displayed data."""
