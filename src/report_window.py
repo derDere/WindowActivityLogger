@@ -172,25 +172,29 @@ class ReportWindow:
 
         # Add project combobox for each row on single click
         self._title_tree.bind('<Button-1>', self._handle_title_click)
-        self._title_tree.bind('<FocusOut>', lambda e: self._destroy_active_combo())
+        self._window.bind('<FocusOut>', self._check_combo_focus)
 
-    def _destroy_active_combo(self) -> None:
-        """Destroy the active combobox if it exists and isn't focused."""
-        if self._active_combo:
-            # Only destroy if the combo or its popup isn't focused
+    def _check_combo_focus(self, event) -> None:
+        """Safely check focus and destroy combo if needed."""
+        if not self._active_combo:
+            return
+            
+        try:
             focused = self._window.focus_get()
-            if focused != self._active_combo and str(focused).startswith(str(self._active_combo)):
-                return
-            self._active_combo.destroy()
-            self._active_combo = None
+            # If we can't get focus info or focus is outside our window, destroy combo
+            if not focused or not str(focused).startswith(str(self._window)):
+                self._active_combo.destroy()
+                self._active_combo = None
+        except KeyError:
+            # Ignore KeyError from popup windows
+            pass
+        except Exception as e:
+            print(f"Focus check error: {e}")
 
     def _handle_title_click(self, event) -> None:
         """Handle clicks in the title table to show project combobox."""
         if not self._title_tree:
             return
-
-        # Destroy any existing combobox first
-        self._destroy_active_combo()
 
         # Get clicked region
         region = self._title_tree.identify_region(event.x, event.y)
@@ -202,6 +206,9 @@ class ReportWindow:
         item = self._title_tree.identify_row(event.y)
         
         if not item or column != "#3":  # #3 is the project column
+            if self._active_combo:
+                self._active_combo.destroy()
+                self._active_combo = None
             return
 
         # Get cell position
@@ -216,8 +223,16 @@ class ReportWindow:
         title = row_values[0]
         current_project = row_values[2]
 
+        # If clicking on the same combo, just return
+        if self._active_combo and self._active_combo.winfo_exists():
+            old_title = getattr(self._active_combo, '_title', None)
+            if old_title == title:
+                return
+            self._active_combo.destroy()
+
         # Create and position combobox
         combo = ttk.Combobox(self._title_tree, width=20, state="readonly")
+        combo._title = title  # Store title for reference
         self._active_combo = combo
         
         # Get all projects
