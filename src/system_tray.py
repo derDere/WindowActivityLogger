@@ -18,6 +18,7 @@ class SystemTrayInterface:
         self._on_exit: Optional[Callable[[], None]] = None
         self._on_show_report: Optional[Callable[[], None]] = None
         self._on_show_settings: Optional[Callable[[], None]] = None
+        self._on_show_sql_query: Optional[Callable[[], None]] = None
         self._callback_lock = threading.Lock()
 
     def initialize(self) -> bool:
@@ -31,6 +32,7 @@ class SystemTrayInterface:
             menu = pystray.Menu(
                 pystray.MenuItem("Show Report", self._handle_show_report),
                 pystray.MenuItem("Settings", self._handle_show_settings),
+                pystray.MenuItem("SQL Query", self._handle_show_sql_query),
                 pystray.Menu.SEPARATOR,
                 pystray.MenuItem("Exit", self._handle_exit)
             )
@@ -77,6 +79,11 @@ class SystemTrayInterface:
         with self._callback_lock:
             self._on_show_settings = callback
 
+    def set_show_sql_query_callback(self, callback: Callable[[], None]) -> None:
+        """Set the callback for show SQL query menu item."""
+        with self._callback_lock:
+            self._on_show_sql_query = callback
+
     def _handle_exit(self, _icon: Icon, _item: MenuItem) -> None:
         """Handle exit menu item click."""
         with self._callback_lock:
@@ -96,3 +103,9 @@ class SystemTrayInterface:
         with self._callback_lock:
             if self._on_show_settings:
                 self._on_show_settings()
+
+    def _handle_show_sql_query(self, _icon: Icon, _item: MenuItem) -> None:
+        """Handle show SQL query menu item click."""
+        with self._callback_lock:
+            if self._on_show_sql_query:
+                self._on_show_sql_query()
