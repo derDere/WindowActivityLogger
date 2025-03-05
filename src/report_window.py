@@ -2,11 +2,13 @@
 Report window for displaying activity statistics and managing projects.
 """
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, List, Tuple, cast
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from db_manager import DatabaseManager
+from html_export import HTMLExportGenerator
 
 # Time range options
 TIME_RANGES = {
@@ -24,6 +26,7 @@ class ReportWindow:
         self._project_tree: Optional[ttk.Treeview] = None
         self._title_tree: Optional[ttk.Treeview] = None
         self._active_combo: Optional[ttk.Combobox] = None  # Track active combobox
+        self._html_generator = HTMLExportGenerator(db_manager)
 
     @property
     def _app(self):
@@ -83,15 +86,19 @@ class ReportWindow:
         menu_frame = ttk.Frame(parent)
         menu_frame.pack(fill=tk.X, pady=(0, 10))
 
+        # Left side controls
+        left_frame = ttk.Frame(menu_frame)
+        left_frame.pack(side=tk.LEFT)
+
         # Reload button
-        reload_btn = ttk.Button(menu_frame, text="Reload", command=self.refresh_data)
+        reload_btn = ttk.Button(left_frame, text="Reload", command=self.refresh_data)
         reload_btn.pack(side=tk.LEFT, padx=(0, 10))
 
         # Time span dropdown
-        ttk.Label(menu_frame, text="Time Range:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(left_frame, text="Time Range:").pack(side=tk.LEFT, padx=(0, 5))
         self._time_range_var = tk.StringVar(value="Day")
         time_combo = ttk.Combobox(
-            menu_frame,
+            left_frame,
             textvariable=self._time_range_var,
             values=list(TIME_RANGES.keys()),
             state="readonly",
@@ -99,6 +106,14 @@ class ReportWindow:
         )
         time_combo.pack(side=tk.LEFT)
         self._time_range_var.trace_add("write", lambda *args: self.refresh_data())
+
+        # Right side controls
+        right_frame = ttk.Frame(menu_frame)
+        right_frame.pack(side=tk.RIGHT)
+
+        # Export button
+        export_btn = ttk.Button(right_frame, text="Export to HTML", command=self._handle_export)
+        export_btn.pack(side=tk.RIGHT)
 
     def _create_pie_chart(self, parent: ttk.Frame) -> None:
         """Create the pie chart area (placeholder)."""
@@ -379,3 +394,34 @@ class ReportWindow:
         x = self._window.winfo_x() + (self._window.winfo_width() - dialog.winfo_width()) // 2
         y = self._window.winfo_y() + (self._window.winfo_height() - dialog.winfo_height()) // 2
         dialog.geometry(f"+{x}+{y}")
+
+    def _handle_export(self) -> None:
+        """Handle export button click."""
+        try:
+            # Get time range for report
+            range_name = self._time_range_var.get() if self._time_range_var else "Day"
+            end_time = datetime.now()
+            start_time = end_time - TIME_RANGES[range_name]
+
+            # Get save location
+            file_name = f"activity_report_{start_time.strftime('%Y%m%d')}_{end_time.strftime('%Y%m%d')}.html"
+            filepath = filedialog.asksaveasfilename(
+                initialfile=file_name,
+                defaultextension=".html",
+                filetypes=[("HTML files", "*.html"), ("All files", "*.*")]
+            )
+            if not filepath:
+                return  # User cancelled
+
+            # Generate and save report
+            report_html = self._html_generator.generate_report(start_time, end_time)
+            Path(filepath).write_text(report_html, encoding='utf-8')
+
+            # Show success message
+            messagebox.showinfo(
+                "Export Complete",
+                f"Report has been saved to:\n{filepath}"
+            )
+
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export report: {e}")
