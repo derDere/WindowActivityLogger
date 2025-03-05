@@ -5,12 +5,14 @@ A Python-based background service that monitors and logs active window titles on
 
 ## Core Functionality
 - Runs as a background process on Windows with system tray icon
-- Monitors active window titles every 30 seconds (configurable)
+- Monitors active window titles at configurable intervals (default: 30 seconds)
 - Records window title changes with start and end timestamps
-- Stores data in SQLite database within MyDocuments
-- Provides visual activity reports with pie chart and detailed tables
+- Stores data in SQLite database within user's Documents folder
+- Provides visual activity reports with interactive pie chart and detailed tables
+- Project-based time tracking with flexible project assignment
 - Configurable title filtering using regex patterns
-- Project-based time tracking
+- Syntax-highlighted SQL query interface for direct database access
+- HTML report export with embedded SVG charts
 
 ## Technical Specifications
 
@@ -18,26 +20,27 @@ A Python-based background service that monitors and logs active window titles on
 - Located in: `%USERPROFILE%\Documents\WindowLogger\activity.db`
 - Table Structure:
   1. WindowTitles:
-     - TitleID (Primary Key, checksum of title)
-     - Title (Text)
+     - ID (Primary Key, CRC32 hash of title)
+     - Title (Text, Unique)
      - ProjectID (Foreign Key to Projects)
 
   2. WindowLog:
-     - ID (Primary Key)
+     - ID (Primary Key, Autoincrement)
      - TitleID (Foreign Key to WindowTitles)
-     - Start Timestamp
-     - End Timestamp
+     - StartTimestamp (DateTime)
+     - EndTimestamp (DateTime, Nullable)
 
   3. Projects:
-     - ProjectID (Primary Key)
-     - ProjectName
-     - Initial record: "Misc" project
+     - ID (Primary Key, Autoincrement)
+     - ProjectName (Text, Unique)
+     - Initial record: "Misc" project (ID: 1)
 
 ### User Interface
 1. System Tray Icon
    - Context Menu Options:
      - Show Report Window
      - Show Settings
+     - Show SQL Query
      - Exit Application
 
 2. Report Window
@@ -45,70 +48,70 @@ A Python-based background service that monitors and logs active window titles on
      - Day
      - Week
      - Month
-   - Pie Chart: Visual representation of project time distribution
-   - Tables:
-     - Project Summary:
-       - Project Name
-       - Total Time
-       - Only shows projects with time > 0 in selected range
-     - Title Summary:
-       - Window Title
-       - Total Time
-       - Project (Dropdown for reassignment)
-         - Includes "<New>" option to create new project
-         - Opens input dialog for project name
-         - Validates name (min 3 chars excluding spaces)
-       - Only shows titles used in selected time range
+   - Interactive Pie Chart:
+     - Project time distribution
+     - Hover tooltips with details
+     - Auto-hiding small slice labels
+   - Project Summary Table:
+     - Project Name
+     - Total Time
+     - Only shows active projects
+   - Title Summary Table:
+     - Window Title
+     - Total Time
+     - Project Assignment (Interactive dropdown)
+     - Instant project creation
    - Export to HTML button
-   - Manual refresh button (applies project changes)
+   - Manual refresh button
 
 3. Settings Window
-   - Database file path setting
-   - Title polling interval setting (default: 30 seconds)
-   - Regex Pattern Table:
-     - Single column editable grid
-     - Add/Remove/Edit functionality
-     - Patterns for title filtering
+   - Database file path with browse button
+   - Title polling interval setting
+   - Regex Pattern Management:
+     - Add/Remove patterns
+     - Pattern validation
+     - Real-time syntax checking
+
+4. SQL Query Window
+   - Syntax-highlighted SQL editor
+   - Multi-query support (semicolon-separated)
+   - Results displayed in scrollable grids
+   - Error handling with detailed messages
+   - Support for non-query statements
 
 ### Configuration
 - JSON file stored in `%USERPROFILE%\Documents\WindowLogger\config.json`
-- Settings include:
-  - Database path
-  - Polling interval
-  - Ignore patterns (regex list)
+- Settings:
+  - Database path (string)
+  - Polling interval (integer, seconds)
+  - Ignore patterns (array of regex strings)
 
 ### HTML Export
-- Single self-contained file
-- No external dependencies
-- Contains:
-  - Inline SVG pie chart
-  - Project summary table
-  - Title summary table
-  - Embedded CSS styling
-  - No JavaScript
+- Self-contained single file
+- Features:
+  - Embedded SVG pie chart
+  - Interactive tooltips
+  - Responsive layout
+  - Clean, modern styling
+  - Project and title summaries
+  - Timestamp range display
 
 ## Technical Requirements
-- Python 3.x
+- Python 3.10 or higher
 - Windows Operating System
-- SQLite database
-- System tray functionality
-- Basic error logging to terminal
+- Dependencies:
+  - pywin32: Windows API access
+  - pystray: System tray functionality
+  - Pillow: Image handling and charts
+  - pygments: SQL syntax highlighting
 
 ## Implementation Notes
-- Window title polling at configurable intervals
-- New database entries created when title changes
-- Previous entry updated with end timestamp
-- Uninformative titles filtered via regex patterns
-- No encryption needed (local storage only)
-- Manual application startup (no auto-start implementation)
-- Project reassignment through UI
-- Checksum-based title deduplication
-- Project creation via dropdown with input validation
-
-## Success Criteria
-- Successfully runs in background with minimal system impact
-- Accurately captures window title changes with timestamps
-- Provides clear visual reports of daily/weekly/monthly activity
-- Allows effective filtering of irrelevant window titles
-- Supports project-based time tracking
-- Exports data in readable, self-contained HTML format
+- Event-driven architecture
+- Thread-safe operations
+- Efficient database queries with proper indexing
+- Automated database repair/backup
+- Smart window title detection for UWP apps
+- Configurable runtime settings
+- Project-based organization
+- Data validation throughout
+- Error handling and recovery
