@@ -70,14 +70,8 @@ class HTMLExportGenerator:
             project_data: List of (project_name, duration) tuples
             
         Returns:
-            SVG pie chart as string
+            SVG pie chart as string, shows empty circle with message if no data
         """
-        if not project_data:
-            return '<p class="no-data">No data available</p>'
-
-        # Calculate total for percentages
-        total = sum(duration for _, duration in project_data)
-        
         # Size and position constants
         size = 400
         center = size / 2
@@ -88,6 +82,19 @@ class HTMLExportGenerator:
         
         # Add group for centering
         svg += f'<g transform="translate({center},{center})">\n'
+        
+        if not project_data:
+            # Draw empty circle
+            svg += f'  <circle r="{radius}" fill="none" stroke="#ddd" stroke-width="2"/>\n'
+            # Add "No data available" text
+            svg += '  <text text-anchor="middle" alignment-baseline="middle" '
+            svg += 'font-size="16" fill="#666" font-style="italic">No data available</text>\n'
+            svg += '</g>\n'
+            svg += '</svg>'
+            return svg
+        
+        # Calculate total for percentages
+        total = sum(duration for _, duration in project_data)
         
         # Track current angle and colors
         current_angle = 0
