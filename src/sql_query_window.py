@@ -140,6 +140,9 @@ SELECT name FROM sqlite_master;""")
             with self._db_manager._get_connection() as conn:
                 cursor = conn.cursor()
                 
+                # Start a transaction
+                conn.execute("BEGIN")
+                
                 # Split and execute multiple statements
                 statements = [stmt.strip() for stmt in query.split(';') if stmt.strip()]
                 result_count = 0
@@ -160,7 +163,6 @@ SELECT name FROM sqlite_master;""")
                             
                             # Configure columns
                             for col in columns:
-                                # Use the original column name from the result set
                                 tree.heading(col, text=col)
                                 tree.column(col, width=100)  # Default width
                             
@@ -176,25 +178,36 @@ SELECT name FROM sqlite_master;""")
                             result_frame.grid_columnconfigure(0, weight=1)
                             result_frame.grid_rowconfigure(0, weight=1)
                             
-                            # Add data - properly extract values from SQLite Row objects
+                            # Add data
                             rows = cursor.fetchall()
                             for row in rows:
-                                # Convert SQLite Row to tuple of values
                                 values = tuple(row[col] for col in columns)
                                 tree.insert("", "end", values=values)
                             
                             result_count += 1
+                        else:
+                            # Non-query statement, show success in result area
+                            result_frame = ttk.Frame(self._result_notebook)
+                            self._result_notebook.add(result_frame, text=f"Result {result_count + 1}")
+                            success_label = ttk.Label(result_frame, text="Query executed successfully", foreground="green", wraplength=600)
+                            success_label.pack(padx=10, pady=10)
+                            result_count += 1
+                            
                     except Exception as e:
+                        # Rollback on error
+                        conn.rollback()
+                        
                         # Create error tab
                         error_frame = ttk.Frame(self._result_notebook)
                         self._result_notebook.add(error_frame, text=f"Error {result_count + 1}")
                         error_label = ttk.Label(error_frame, text=str(e), foreground="red", wraplength=600)
                         error_label.pack(padx=10, pady=10)
                         result_count += 1
+                        raise  # Re-raise to trigger outer error handling
 
-                if result_count == 0:
-                    # Show success message for non-query statements
-                    messagebox.showinfo("Success", "Query executed successfully")
+                # Commit the transaction if we got here without errors
+                conn.commit()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to execute query: {e}")
+            # Error will already be shown in the result area
+            pass
