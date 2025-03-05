@@ -4,6 +4,8 @@ SQL Query window for direct database access.
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional, List, Any, Dict, TYPE_CHECKING
+from pathlib import Path
+from PIL import Image, ImageTk
 
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
@@ -32,6 +34,11 @@ class SQLQueryWindow:
             self._window.title("SQL Query")
             self._window.minsize(800, 600)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
+
+            # Set window icon
+            icon_path = Path(__file__).parent / "resources" / "icon.ico"
+            if icon_path.exists():
+                self._window.iconbitmap(str(icon_path))
 
             # Create main container
             main_frame = ttk.Frame(self._window, padding="10")

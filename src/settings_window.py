@@ -41,6 +41,11 @@ class SettingsWindow:
             self._window.minsize(400, 300)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
 
+            # Set window icon
+            icon_path = Path(__file__).parent / "resources" / "icon.ico"
+            if (icon_path.exists()):
+                self._window.iconbitmap(str(icon_path))
+
             # Create widgets
             self._create_widgets()
 
@@ -167,6 +172,11 @@ class SettingsWindow:
         dialog.title("Add Pattern")
         dialog.transient(self._window)
         dialog.grab_set()
+
+        # Set dialog icon
+        icon_path = Path(__file__).parent / "resources" / "icon.ico"
+        if icon_path.exists():
+            dialog.iconbitmap(str(icon_path))
 
         # Center on parent
         dialog.geometry("300x150")

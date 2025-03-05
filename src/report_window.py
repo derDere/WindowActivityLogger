@@ -42,6 +42,11 @@ class ReportWindow:
             self._window.minsize(800, 600)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
 
+            # Set window icon
+            icon_path = Path(__file__).parent / "resources" / "icon.ico"
+            if icon_path.exists():
+                self._window.iconbitmap(str(icon_path))
+
             # Create and pack the main container with padding
             main_frame = ttk.Frame(self._window, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
@@ -401,6 +406,11 @@ class ReportWindow:
         dialog.title("New Project")
         dialog.transient(self._window)
         dialog.grab_set()
+
+        # Set dialog icon
+        icon_path = Path(__file__).parent / "resources" / "icon.ico"
+        if (icon_path.exists()):
+            dialog.iconbitmap(str(icon_path))
 
         ttk.Label(dialog, text="Enter project name:").pack(pady=5)
         name_var = tk.StringVar()
