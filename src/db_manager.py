@@ -179,7 +179,7 @@ class DatabaseManager:
             print(f"Error logging window title: {e}")
             return False
 
-    def get_title_summary(self, start_time: datetime, end_time: datetime) -> List[Tuple[str, float]]:
+    def get_title_summary(self, start_time: datetime, end_time: datetime) -> List[Tuple[str, float, int]]:
         """Get summary of window titles and their durations in seconds.
 
         Args:
@@ -203,7 +203,8 @@ class DatabaseManager:
                                 ELSE
                                     strftime('%s', wl.EndTimestamp) - strftime('%s', wl.StartTimestamp)
                             END
-                        ) as duration
+                        ) as duration,
+                        wt.ProjectID
                     FROM WindowLog wl
                     JOIN WindowTitles wt ON wl.TitleID = wt.ID
                     WHERE wl.StartTimestamp <= ?
@@ -213,13 +214,13 @@ class DatabaseManager:
                     """,
                     (end_time, end_time, start_time)
                 )
-                return [(row['Title'], row['duration']) for row in cursor.fetchall()]
+                return [(row['Title'], row['duration'], row["ProjectID"]) for row in cursor.fetchall()]
 
         except Exception as e:
             print(f"Error getting title summary: {e}")
             return []
 
-    def get_project_summary(self, start_time: datetime, end_time: datetime) -> List[Tuple[str, float]]:
+    def get_project_summary(self, start_time: datetime, end_time: datetime) -> List[Tuple[int, str, float]]:
         """Get summary of projects and their durations in seconds.
 
         Args:
@@ -235,6 +236,7 @@ class DatabaseManager:
                 cursor.execute(
                     """
                     SELECT
+                        p.ID,
                         p.ProjectName,
                         SUM(
                             CASE
@@ -255,7 +257,7 @@ class DatabaseManager:
                     """,
                     (end_time, end_time, start_time)
                 )
-                return [(row['ProjectName'], row['duration']) for row in cursor.fetchall()]
+                return [(row["ID"], row['ProjectName'], row['duration']) for row in cursor.fetchall()]
 
         except Exception as e:
             print(f"Error getting project summary: {e}")
