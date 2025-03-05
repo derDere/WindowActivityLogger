@@ -21,7 +21,7 @@ class ConfigurationManager:
         self._config: Dict[str, Any] = {
             "database_path": str(self._get_default_database_path()),
             "polling_interval": 30,  # Default 30 seconds
-            "regex_patterns": []  # Default empty list
+            "regex_patterns": ["^\\[W\\.A\\.L\\.\\] - .*"]  # Default pattern to ignore our own windows
         }
         self._update_handlers: List[Callable[[], None]] = []
 

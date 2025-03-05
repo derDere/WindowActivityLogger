@@ -68,13 +68,13 @@ class SQLQueryWindow:
         """Show the SQL query window."""
         if self._window is None:
             self._window = tk.Toplevel(self._app.root)
-            self._window.title("SQL Query")
+            self._window.title("[W.A.L.] - SQL Query")
             self._window.minsize(800, 600)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
 
             # Set window icon
             icon_path = Path(__file__).parent / "resources" / "icon.ico"
-            if icon_path.exists():
+            if (icon_path.exists()):
                 self._window.iconbitmap(str(icon_path))
 
             # Create main container
@@ -188,7 +188,7 @@ SELECT name FROM sqlite_master;""")
                         else:
                             # Non-query statement, show success in result area
                             result_frame = ttk.Frame(self._result_notebook)
-                            self._result_notebook.add(result_frame, text=f"Result {result_count + 1}")
+                            self._result_notebook.add(result_frame, text=f"[W.A.L.] - Result {result_count + 1}")
                             success_label = ttk.Label(result_frame, text="Query executed successfully", foreground="green", wraplength=600)
                             success_label.pack(padx=10, pady=10)
                             result_count += 1
@@ -199,7 +199,7 @@ SELECT name FROM sqlite_master;""")
                         
                         # Create error tab
                         error_frame = ttk.Frame(self._result_notebook)
-                        self._result_notebook.add(error_frame, text=f"Error {result_count + 1}")
+                        self._result_notebook.add(error_frame, text=f"[W.A.L.] - Error {result_count + 1}")
                         error_label = ttk.Label(error_frame, text=str(e), foreground="red", wraplength=600)
                         error_label.pack(padx=10, pady=10)
                         result_count += 1

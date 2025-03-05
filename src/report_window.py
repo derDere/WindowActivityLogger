@@ -38,7 +38,7 @@ class ReportWindow:
         """Show the report window."""
         if self._window is None:
             self._window = tk.Toplevel(self._app.root)
-            self._window.title("Activity Report")
+            self._window.title("[W.A.L.] - Activity Report")
             self._window.minsize(800, 600)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
 
@@ -344,7 +344,7 @@ class ReportWindow:
             self._update_title_data(start_time, end_time)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh data: {e}")
+            messagebox.showerror("[W.A.L.] - Error", f"Failed to refresh data: {e}")
 
     def _format_duration(self, seconds: float) -> str:
         """Format duration in seconds to a readable string."""
@@ -403,7 +403,7 @@ class ReportWindow:
             return
 
         dialog = tk.Toplevel(self._window)
-        dialog.title("New Project")
+        dialog.title("[W.A.L.] - New Project")
         dialog.transient(self._window)
         dialog.grab_set()
 
@@ -427,7 +427,7 @@ class ReportWindow:
                         self.refresh_data()
             else:
                 messagebox.showerror(
-                    "Invalid Name",
+                    "[W.A.L.] - Invalid Name",
                     "Project name must be at least 3 characters long"
                 )
 
@@ -451,6 +451,7 @@ class ReportWindow:
             # Get save location
             file_name = f"activity_report_{start_time.strftime('%Y%m%d')}_{end_time.strftime('%Y%m%d')}.html"
             filepath = filedialog.asksaveasfilename(
+                title="[W.A.L.] - Export Report",
                 initialfile=file_name,
                 defaultextension=".html",
                 filetypes=[("HTML files", "*.html"), ("All files", "*.*")]
@@ -464,9 +465,9 @@ class ReportWindow:
 
             # Show success message
             messagebox.showinfo(
-                "Export Complete",
+                "[W.A.L.] - Export Complete",
                 f"Report has been saved to:\n{filepath}"
             )
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {e}")
+            messagebox.showerror("[W.A.L.] - Export Error", f"Failed to export report: {e}")

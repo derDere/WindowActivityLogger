@@ -37,7 +37,7 @@ class SettingsWindow:
         if self._window is None:
             # Create new window using the application's root
             self._window = tk.Toplevel(self._app.root)
-            self._window.title("Settings")
+            self._window.title("[W.A.L.] - Settings")
             self._window.minsize(400, 300)
             self._window.protocol("WM_DELETE_WINDOW", self.hide)
 
@@ -156,7 +156,7 @@ class SettingsWindow:
         initial_dir = Path(self._db_path_var.get()).parent
         filepath = filedialog.asksaveasfilename(
             initialdir=initial_dir,
-            title="Select or Create Database File",
+            title="[W.A.L.] - Select or Create Database File",
             filetypes=[
                 ("SQLite Database", "*.db;*.sqlite"),
                 ("All Files", "*.*")
@@ -169,7 +169,7 @@ class SettingsWindow:
     def _handle_add_pattern(self) -> None:
         """Handle add pattern button click."""
         dialog = tk.Toplevel(self._window)
-        dialog.title("Add Pattern")
+        dialog.title("[W.A.L.] - Add Pattern")
         dialog.transient(self._window)
         dialog.grab_set()
 
@@ -197,7 +197,7 @@ class SettingsWindow:
                 self._pattern_list.insert(tk.END, pattern)
                 dialog.destroy()
             except re.error:
-                messagebox.showerror("Invalid Pattern", "Please enter a valid regular expression")
+                messagebox.showerror("[W.A.L.] - Invalid Pattern", "Please enter a valid regular expression")
 
         btn_frame = ttk.Frame(dialog, padding="5")
         btn_frame.pack(fill=tk.X, side=tk.BOTTOM)
@@ -223,7 +223,7 @@ class SettingsWindow:
             db_path = Path(self._db_path_var.get())
             if not db_path.parent.exists():
                 messagebox.showerror(
-                    "Invalid Path",
+                    "[W.A.L.] - Invalid Path",
                     "Database directory does not exist"
                 )
                 return False
@@ -235,7 +235,7 @@ class SettingsWindow:
                     raise ValueError()
             except ValueError:
                 messagebox.showerror(
-                    "Invalid Interval",
+                    "[W.A.L.] - Invalid Interval",
                     "Polling interval must be a positive integer"
                 )
                 return False
@@ -247,7 +247,7 @@ class SettingsWindow:
                     re.compile(pattern)
                 except re.error:
                     messagebox.showerror(
-                        "Invalid Pattern",
+                        "[W.A.L.] - Invalid Pattern",
                         f"Invalid regex pattern: {pattern}"
                     )
                     return False
@@ -255,7 +255,7 @@ class SettingsWindow:
             return True
 
         except Exception as e:
-            messagebox.showerror("Validation Error", str(e))
+            messagebox.showerror("[W.A.L.] - Validation Error", str(e))
             return False
 
     def _handle_save(self) -> None:
@@ -273,9 +273,9 @@ class SettingsWindow:
             if self._config_manager.save():
                 # Hide window after successful save and update
                 self.hide()
-                messagebox.showinfo("Success", "Settings saved successfully")
+                messagebox.showinfo("[W.A.L.] - Success", "Settings saved successfully")
             else:
-                messagebox.showerror("Error", "Failed to save settings")
+                messagebox.showerror("[W.A.L.] - Error", "Failed to save settings")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {e}")
+            messagebox.showerror("[W.A.L.] - Error", f"Failed to save settings: {e}")

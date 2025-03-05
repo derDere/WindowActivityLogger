@@ -37,7 +37,7 @@ class HTMLExportGenerator:
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Activity Report {start_time.strftime('%Y-%m-%d')} to {end_time.strftime('%Y-%m-%d')}</title>
+    <title>[W.A.L.] - Activity Report {start_time.strftime('%Y-%m-%d')} to {end_time.strftime('%Y-%m-%d')}</title>
     <style>
 {self._get_css_styles()}
     </style>
