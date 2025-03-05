@@ -55,6 +55,10 @@ class SQLQueryWindow:
             # Query text area
             self._query_text = tk.Text(main_frame, height=10, wrap=tk.WORD)
             self._query_text.pack(fill=tk.X, pady=(0, 10))
+            self._query_text.insert("1.0", """/* WARNING: Only modify these SQL queries if you know what you are doing.
+   Incorrect queries could potentially damage your database. */
+
+SELECT name FROM sqlite_master;""")
 
             # Result notebook for multiple result sets
             self._result_notebook = ttk.Notebook(main_frame)
