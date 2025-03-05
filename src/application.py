@@ -118,22 +118,35 @@ class Application:
 
         self._is_running = False
 
-        # Hide UI windows first to prevent any new operations
-        if self._report_window:
-            self._report_window.hide()
-        if self._settings_window:
-            self._settings_window.hide()
+        # Queue UI cleanup to run in main thread
+        try:
+            # Hide UI windows first to prevent any new operations
+            if self._report_window:
+                self._report_window.hide()
+            if self._settings_window:
+                self._settings_window.hide()
 
-        # Stop background components in reverse order of initialization
-        if self._window_monitor:
-            self._window_monitor.stop()
-        if self._tray_interface:
-            self._tray_interface.cleanup()
+            # Stop background components in reverse order of initialization
+            if self._window_monitor:
+                self._window_monitor.stop()
+            if self._tray_interface:
+                self._tray_interface.cleanup()
 
-        # Destroy root window last
-        if self._root:
-            self._root.quit()
-            self._root.destroy()
+            # Schedule root destruction for next UI update
+            if self._root:
+                self._root.after(0, self._destroy_root)
+        except Exception as e:
+            print(f"Error cleaning up components: {e}")
+
+    def _destroy_root(self) -> None:
+        """Destroy the root window safely in the main thread."""
+        try:
+            if self._root:
+                self._root.quit()
+                self._root.destroy()
+                self._root = None
+        except Exception as e:
+            print(f"Error destroying root window: {e}")
 
     def process_ui_events(self) -> None:
         """Process any pending UI events in the main thread."""
@@ -195,7 +208,8 @@ class Application:
     def _handle_exit_request(self) -> None:
         """Handle application exit request from system tray."""
         try:
-            self.stop()  # This will set _is_running to False and stop all components
+            # Queue stop to run in main thread
+            self._queue_ui_action(self.stop)
         except Exception as e:
             print(f"Error during exit: {e}")
             self._is_running = False  # Ensure we still exit even if there's an error
