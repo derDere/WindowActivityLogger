@@ -7,7 +7,7 @@ from tkinter.messagebox import showerror
 from typing import Optional, Dict, List, Tuple, cast
 from datetime import datetime, timedelta
 
-from .db_manager import DatabaseManager
+from db_manager import DatabaseManager
 
 # Time range options
 TIME_RANGES = {

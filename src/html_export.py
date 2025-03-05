@@ -4,7 +4,7 @@ HTML export generator for creating self-contained activity reports.
 from datetime import datetime, timedelta
 from typing import List, Tuple
 
-from .db_manager import DatabaseManager
+from db_manager import DatabaseManager
 
 
 class HTMLExportGenerator:

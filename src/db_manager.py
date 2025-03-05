@@ -9,9 +9,10 @@ import sqlite3
 import zlib
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Iterator, Any, Dict
+from typing import List, Optional, Tuple, Iterator, Any, Dict, TYPE_CHECKING
 
-from .application import Application
+if TYPE_CHECKING:
+    from application import Application
 
 class DatabaseManager:
     # SQL statements for schema creation
@@ -46,7 +47,7 @@ class DatabaseManager:
         INSERT OR IGNORE INTO Projects (ID, ProjectName) VALUES (1, 'Misc')
     """
 
-    def __init__(self, app: Application):
+    def __init__(self, app: 'Application'):
         """Initialize the database manager.
 
         Args:

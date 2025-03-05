@@ -5,15 +5,15 @@ import ctypes
 import threading
 import time
 from datetime import datetime
-from typing import Callable, Optional
-
+from typing import Callable, Optional, TYPE_CHECKING
 import win32api
 import win32con
 import win32gui
 import win32process
 import win32ts
 
-from .application import Application
+if TYPE_CHECKING:
+    from application import Application
 
 class WindowMonitor:
     # Windows API constants
@@ -22,7 +22,7 @@ class WindowMonitor:
     BATTERY_FLAG_CHARGING = 0x00000008
     WTS_SESSION_INFO = 24  # WTSSessionInfo constant from winuser.h
 
-    def __init__(self, app: Application):
+    def __init__(self, app: 'Application'):
         """Initialize the window monitor.
 
         Args:

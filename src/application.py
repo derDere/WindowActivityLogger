@@ -3,21 +3,22 @@ Main application class that coordinates all components of the Window Activity Lo
 """
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 import re
+from config_manager import ConfigurationManager
+from window_monitor import WindowMonitor
+from system_tray import SystemTrayInterface
+from report_window import ReportWindow
+from settings_window import SettingsWindow
 
-from .config_manager import ConfigurationManager
-from .db_manager import DatabaseManager
-from .window_monitor import WindowMonitor
-from .system_tray import SystemTrayInterface
-from .report_window import ReportWindow
-from .settings_window import SettingsWindow
+if TYPE_CHECKING:
+    from db_manager import DatabaseManager
 
 class Application:
     def __init__(self):
         """Initialize the application and its components."""
         self._config_manager: Optional[ConfigurationManager] = None
-        self._db_manager: Optional[DatabaseManager] = None
+        self._db_manager: Optional['DatabaseManager'] = None
         self._window_monitor: Optional[WindowMonitor] = None
         self._tray_interface: Optional[SystemTrayInterface] = None
         self._report_window: Optional[ReportWindow] = None
@@ -42,6 +43,9 @@ class Application:
             self._config_manager = ConfigurationManager()
             if not self._config_manager.load():
                 return False
+
+            # Import here to avoid circular dependency
+            from db_manager import DatabaseManager
 
             # Initialize database manager
             self._db_manager = DatabaseManager(self)

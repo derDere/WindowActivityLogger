@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Optional, List
 
-from .config_manager import ConfigurationManager
+from config_manager import ConfigurationManager
 
 
 class SettingsWindow:

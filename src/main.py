@@ -1,12 +1,18 @@
 """
 Main entry point for the Window Activity Logger application.
 """
+import os
 import sys
 import signal
 import time
 from pathlib import Path
 
-from .application import Application
+# Add the parent directory to Python path so modules can be found
+current_dir = Path(__file__).resolve().parent
+if str(current_dir) not in sys.path:
+    sys.path.append(str(current_dir))
+
+from application import Application
 
 def main() -> int:
     """Main entry point.
