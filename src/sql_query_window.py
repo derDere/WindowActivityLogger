@@ -10,13 +10,11 @@ from pygments import lex
 from pygments.lexers import SqlLexer
 from pygments.token import Token
 
+# Import SQL constants
+from sql_constants import DEFAULT_QUERY
+
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
-
-DEFAULT_QUERY = """/* WARNING: Only modify these SQL queries if you know what you are doing.
-   Incorrect queries could potentially damage your database. */
-
-SELECT name FROM sqlite_master;"""
 
 class SQLText(tk.Text):
     """Text widget with SQL syntax highlighting"""
