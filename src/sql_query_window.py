@@ -13,6 +13,11 @@ from pygments.token import Token
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
 
+DEFAULT_QUERY = """/* WARNING: Only modify these SQL queries if you know what you are doing.
+   Incorrect queries could potentially damage your database. */
+
+SELECT name FROM sqlite_master;"""
+
 class SQLText(tk.Text):
     """Text widget with SQL syntax highlighting"""
     def __init__(self, *args, **kwargs):
@@ -92,10 +97,7 @@ class SQLQueryWindow:
             # Query text area with syntax highlighting
             self._query_text = SQLText(main_frame, height=10, wrap=tk.WORD)
             self._query_text.pack(fill=tk.X, pady=(0, 10))
-            self._query_text.insert("1.0", """/* WARNING: Only modify these SQL queries if you know what you are doing.
-   Incorrect queries could potentially damage your database. */
-
-SELECT name FROM sqlite_master;""")
+            self._query_text.insert("1.0", DEFAULT_QUERY)
             self._query_text._highlight()  # Initial highlighting
 
             # Result notebook for multiple result sets
