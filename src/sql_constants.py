@@ -70,34 +70,34 @@ WHERE wt.Title LIKE '%DEMO%'
 ORDER BY wl.StartTimestamp DESC;"""
 
 # Query to merge two similar titles
-MERGE_SIMILAR_TITLES = """/* WARNING: This query modifies data! */
+MERGE_SIMILAR_TITLES = """/* WARNING: This query modifies data permanently!
 
-/* This query merges two similar titles, transferring all logs
-   from the source title to the destination title, then deletes the source title. */
+   This query merges the log entries of multiple titles together. 
+   
+   INSTRUCTIONS:
+   1. Replace SOURCE_TITLE_ID with the ID of the title you want to merge FROM
+   2. Replace TARGET_TITLE_ID with the ID of the title you want to merge INTO
+   3. All window logs from the source title will be reassigned to the target title
+   4. The source title will be deleted after merging
+   
+   To find title IDs, run the "Select Titles" query first */
 
-BEGIN TRANSACTION;
-
--- Parameters: Set these values before running
--- Source title pattern (will be merged into destination)
--- @SourcePattern = '%demo1%'
--- Destination title pattern (will receive logs from source)
--- @DestPattern = '%demo2%'
-
--- Get IDs of the titles to merge
-WITH source_titles AS (
-    SELECT ID FROM WindowTitles WHERE Title LIKE '%demo1%'
-),
-dest_titles AS (
-    SELECT ID FROM WindowTitles WHERE Title LIKE '%demo2%' LIMIT 1
-)
-
--- Update logs from source titles to point to destination title
+-- First update all window logs to point to the target title
 UPDATE WindowLog
-SET TitleID = (SELECT ID FROM dest_titles)
-WHERE TitleID IN (SELECT ID FROM source_titles);
+SET TitleID = TARGET_TITLE_ID
+WHERE TitleID = SOURCE_TITLE_ID;
 
--- Delete the source titles
+-- Then delete the source title
 DELETE FROM WindowTitles
-WHERE ID IN (SELECT ID FROM source_titles);
+WHERE ID = SOURCE_TITLE_ID;
 
-COMMIT;"""
+/* EXAMPLE:
+   To merge "Visual Studio Code" (ID: 123456) into "VS Code" (ID: 789012):
+   
+   UPDATE WindowLog
+   SET TitleID = 789012
+   WHERE TitleID = 123456;
+   
+   DELETE FROM WindowTitles
+   WHERE ID = 123456;
+*/"""
