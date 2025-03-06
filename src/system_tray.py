@@ -31,6 +31,7 @@ class SystemTrayInterface:
             # Create menu
             menu = pystray.Menu(
                 pystray.MenuItem("Show Report", self._handle_show_report),
+                pystray.Menu.SEPARATOR,
                 pystray.MenuItem("Settings", self._handle_show_settings),
                 pystray.MenuItem("SQL Query", self._handle_show_sql_query),
                 pystray.Menu.SEPARATOR,
