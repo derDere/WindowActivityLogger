@@ -133,8 +133,9 @@ class SQLQueryWindow:
             # Initialize last_edited_query with the default
             self._last_edited_query = DEFAULT_QUERY
             
-            # Bind text changes to capture edits
-            self._query_text.bind("<<Modified>>", self._on_text_modified)
+            # Track text modifications using a separate handler rather than <<Modified>> event
+            # which doesn't work consistently across all platforms
+            self._query_text.bind("<KeyRelease>", self._on_text_modified)
 
             # Result notebook for multiple result sets
             self._result_notebook = ttk.Notebook(main_frame)
@@ -153,11 +154,10 @@ class SQLQueryWindow:
 
     def _on_text_modified(self, event=None):
         """Handle text modifications."""
-        if self._query_text and self._query_text.edit_modified():
-            # Save the modified text as the last edited query
-            self._last_edited_query = self._query_text.get("1.0", tk.END).strip()
-            # Reset the modified flag
-            self._query_text.edit_modified(False)
+        if self._query_text:
+            # Save the current text as the last edited query
+            current_text = self._query_text.get("1.0", tk.END).strip()
+            self._last_edited_query = current_text
 
     def _on_query_selected(self, event=None):
         """Handle selection from the query dropdown."""
