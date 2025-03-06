@@ -9,7 +9,7 @@ import sqlite3
 import zlib
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Iterator, Any, Dict, TYPE_CHECKING
+from typing import List, Optional, Tuple, Iterator, Any, Dict, TYPE_CHECKING, Set
 
 if TYPE_CHECKING:
     from application import Application
@@ -501,3 +501,212 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error getting projects: {e}")
             return {}
+
+    def get_all_titles(self) -> List[Dict[str, Any]]:
+        """Get all window titles with their project assignments.
+
+        Returns:
+            List of dictionaries containing title information
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT 
+                        wt.ID, 
+                        wt.Title, 
+                        wt.ProjectID,
+                        p.ProjectName,
+                        COUNT(wl.ID) as LogCount,
+                        MIN(wl.StartTimestamp) as FirstSeen,
+                        MAX(IFNULL(wl.EndTimestamp, CURRENT_TIMESTAMP)) as LastSeen
+                    FROM WindowTitles wt
+                    JOIN Projects p ON wt.ProjectID = p.ID
+                    LEFT JOIN WindowLog wl ON wt.ID = wl.TitleID
+                    GROUP BY wt.ID, wt.Title, wt.ProjectID
+                    ORDER BY wt.Title
+                    """
+                )
+                
+                result = []
+                for row in cursor.fetchall():
+                    result.append({
+                        'id': row['ID'],
+                        'title': row['Title'],
+                        'project_id': row['ProjectID'],
+                        'project_name': row['ProjectName'],
+                        'log_count': row['LogCount'],
+                        'first_seen': row['FirstSeen'],
+                        'last_seen': row['LastSeen']
+                    })
+                return result
+
+        except Exception as e:
+            print(f"Error getting all titles: {e}")
+            return []
+
+    def delete_title(self, title_id: int) -> bool:
+        """Delete a window title and all its log entries.
+
+        Args:
+            title_id: ID of the window title to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                # First delete all associated log entries
+                cursor.execute(
+                    "DELETE FROM WindowLog WHERE TitleID = ?",
+                    (title_id,)
+                )
+                
+                # Then delete the title itself
+                cursor.execute(
+                    "DELETE FROM WindowTitles WHERE ID = ?",
+                    (title_id,)
+                )
+                
+                conn.commit()
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            print(f"Error deleting title: {e}")
+            return False
+
+    def merge_titles(self, title_ids: List[int]) -> bool:
+        """Merge multiple window titles into a new one.
+
+        Args:
+            title_ids: List of title IDs to merge. The first one is the target.
+
+        Returns:
+            bool: True if merge was successful, False otherwise
+        """
+        if not title_ids or len(title_ids) < 2:
+            print("At least two titles must be selected for merging")
+            return False
+
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get info about the titles to be merged
+                title_ids_str = ','.join(['?'] * len(title_ids))
+                cursor.execute(
+                    f"""
+                    SELECT ID, Title, ProjectID
+                    FROM WindowTitles
+                    WHERE ID IN ({title_ids_str})
+                    """,
+                    title_ids
+                )
+                titles_info = cursor.fetchall()
+                
+                if len(titles_info) < 2:
+                    print("Not enough valid titles found for merging")
+                    return False
+                
+                # First ID in the list is our target ID that we want to keep
+                target_id = title_ids[0]
+                
+                # Get the target title's project ID
+                target_project_id = None
+                for row in titles_info:
+                    if row['ID'] == target_id:
+                        target_project_id = row['ProjectID']
+                        break
+                
+                if target_project_id is None:
+                    print(f"Target title ID {target_id} not found")
+                    return False
+                
+                # IDs to remove (all except the target)
+                ids_to_remove = title_ids[1:]
+                to_remove_str = ','.join(['?'] * len(ids_to_remove))
+                
+                # Update all log entries from old titles to point to the target one
+                if ids_to_remove:
+                    cursor.execute(
+                        f"""
+                        UPDATE WindowLog
+                        SET TitleID = ?
+                        WHERE TitleID IN ({to_remove_str})
+                        """,
+                        [target_id] + ids_to_remove
+                    )
+                    
+                    # Delete the old titles
+                    cursor.execute(
+                        f"""
+                        DELETE FROM WindowTitles
+                        WHERE ID IN ({to_remove_str})
+                        """,
+                        ids_to_remove
+                    )
+                
+                conn.commit()
+                return True
+
+        except Exception as e:
+            print(f"Error merging titles: {e}")
+            return False
+
+    def get_log_entries_count(self) -> Dict[int, int]:
+        """Get the count of log entries for each window title.
+
+        Returns:
+            Dictionary mapping title ID to count of log entries
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT TitleID, COUNT(*) as count
+                    FROM WindowLog
+                    GROUP BY TitleID
+                    """
+                )
+                return {row['TitleID']: row['count'] for row in cursor.fetchall()}
+
+        except Exception as e:
+            print(f"Error getting log entries count: {e}")
+            return {}
+
+    def get_titles_by_project(self, project_id: int) -> List[Dict[str, Any]]:
+        """Get all titles assigned to a specific project.
+
+        Args:
+            project_id: ID of the project
+
+        Returns:
+            List of dictionaries containing title information
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT ID, Title
+                    FROM WindowTitles
+                    WHERE ProjectID = ?
+                    ORDER BY Title
+                    """,
+                    (project_id,)
+                )
+                
+                titles = []
+                for row in cursor.fetchall():
+                    titles.append({
+                        'id': row['ID'],
+                        'title': row['Title']
+                    })
+                return titles
+
+        except Exception as e:
+            print(f"Error getting titles by project: {e}")
+            return []
