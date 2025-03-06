@@ -187,9 +187,17 @@ class SQLQueryWindow:
             self._result_notebook = ttk.Notebook(results_frame)
             self._result_notebook.pack(fill=tk.BOTH, expand=True)
             
-            # Add frames to paned window with minimum sizes
+            # Add frames to paned window with minimum sizes and set initial weights
+            # Use weight=1 for text box and weight=2 for results view to get 1/3 and 2/3 ratio
             self._paned_window.add(query_frame, min_size=self._MIN_PANE_SIZE, weight=1)
             self._paned_window.add(results_frame, min_size=self._MIN_PANE_SIZE, weight=2)
+            
+            # Set the initial position of the sash after the window is updated
+            self._window.update_idletasks()
+            total_height = self._paned_window.winfo_height()
+            if total_height > 0:  # Ensure we have a valid height
+                sash_pos = total_height // 3  # Position at 1/3 of the height
+                self._paned_window.sashpos(0, sash_pos)
             
             # Bind sash movement to enforce minimum sizes
             self._paned_window.bind("<ButtonRelease-1>", self._on_sash_moved)
