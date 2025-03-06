@@ -5,13 +5,23 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional, List, Any, Dict, TYPE_CHECKING
 from pathlib import Path
+from datetime import datetime
 from PIL import Image, ImageTk
 from pygments import lex
 from pygments.lexers import SqlLexer
 from pygments.token import Token
 
 # Import SQL constants
-from sql_constants import DEFAULT_QUERY
+from sql_constants import (
+    DEFAULT_QUERY, 
+    DELETE_OLD_LOGS, 
+    DELETE_DEMO_TITLES, 
+    SELECT_PROJECTS, 
+    SELECT_TITLES,
+    SELECT_LOGS,
+    SELECT_DEMO_LOGS,
+    MERGE_SIMILAR_TITLES
+)
 
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
@@ -61,6 +71,8 @@ class SQLQueryWindow:
         self._window: Optional[tk.Toplevel] = None
         self._query_text: Optional[tk.Text] = None
         self._result_notebook: Optional[ttk.Notebook] = None
+        self._query_dropdown: Optional[ttk.Combobox] = None
+        self._last_edited_query: str = DEFAULT_QUERY
 
     @property
     def _app(self):
@@ -90,13 +102,39 @@ class SQLQueryWindow:
 
             # Execute button
             execute_btn = ttk.Button(top_frame, text="Execute Query", command=self._execute_query)
-            execute_btn.pack(side=tk.LEFT)
+            execute_btn.pack(side=tk.LEFT, padx=(0, 10))
+
+            # Predefined queries dropdown
+            query_options = [
+                "<Last>",
+                "<Reset>",
+                "<New>",
+                "Show Tables",
+                "Delete Old Logs",
+                "Delete DEMO Titles",
+                "Select Projects",
+                "Select Titles", 
+                "Select Logs",
+                "Select DEMO Logs",
+                "Merge Similar Titles"
+            ]
+            
+            self._query_dropdown = ttk.Combobox(top_frame, values=query_options, state="readonly", width=20)
+            self._query_dropdown.pack(side=tk.LEFT)
+            self._query_dropdown.current(3)  # Default to "Show Tables"
+            self._query_dropdown.bind("<<ComboboxSelected>>", self._on_query_selected)
 
             # Query text area with syntax highlighting
             self._query_text = SQLText(main_frame, height=10, wrap=tk.WORD)
             self._query_text.pack(fill=tk.X, pady=(0, 10))
             self._query_text.insert("1.0", DEFAULT_QUERY)
             self._query_text._highlight()  # Initial highlighting
+            
+            # Initialize last_edited_query with the default
+            self._last_edited_query = DEFAULT_QUERY
+            
+            # Bind text changes to capture edits
+            self._query_text.bind("<<Modified>>", self._on_text_modified)
 
             # Result notebook for multiple result sets
             self._result_notebook = ttk.Notebook(main_frame)
@@ -113,6 +151,63 @@ class SQLQueryWindow:
             self._window.lift()
             self._window.focus_force()
 
+    def _on_text_modified(self, event=None):
+        """Handle text modifications."""
+        if self._query_text and self._query_text.edit_modified():
+            # Save the modified text as the last edited query
+            self._last_edited_query = self._query_text.get("1.0", tk.END).strip()
+            # Reset the modified flag
+            self._query_text.edit_modified(False)
+
+    def _on_query_selected(self, event=None):
+        """Handle selection from the query dropdown."""
+        if not self._query_text or not self._query_dropdown:
+            return
+        
+        selected = self._query_dropdown.get()
+        
+        # Clear the current query
+        self._query_text.delete("1.0", tk.END)
+        
+        # Set the query based on selection
+        if selected == "<Last>":
+            # Get the last query from configuration
+            last_query = self._app.configuration.get_last_sql_query()
+            if last_query:
+                self._query_text.insert("1.0", last_query)
+            else:
+                self._query_text.insert("1.0", DEFAULT_QUERY)
+        elif selected == "<Reset>":
+            # Restore the last edited query
+            self._query_text.insert("1.0", self._last_edited_query)
+        elif selected == "<New>":
+            # Create a new empty query with current date comment
+            current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            new_query = f"/* New query created on {current_date} */\n\n"
+            self._query_text.insert("1.0", new_query)
+        elif selected == "Show Tables":
+            self._query_text.insert("1.0", DEFAULT_QUERY)
+        elif selected == "Delete Old Logs":
+            self._query_text.insert("1.0", DELETE_OLD_LOGS)
+        elif selected == "Delete DEMO Titles":
+            self._query_text.insert("1.0", DELETE_DEMO_TITLES)
+        elif selected == "Select Projects":
+            self._query_text.insert("1.0", SELECT_PROJECTS)
+        elif selected == "Select Titles":
+            self._query_text.insert("1.0", SELECT_TITLES)
+        elif selected == "Select Logs":
+            self._query_text.insert("1.0", SELECT_LOGS)
+        elif selected == "Select DEMO Logs":
+            self._query_text.insert("1.0", SELECT_DEMO_LOGS)
+        elif selected == "Merge Similar Titles":
+            self._query_text.insert("1.0", MERGE_SIMILAR_TITLES)
+            
+        # Apply syntax highlighting
+        self._query_text._highlight()
+        
+        # Reset selection to avoid auto-reselection
+        self._query_dropdown.selection_clear()
+
     def hide(self) -> None:
         """Hide the SQL query window."""
         if self._window:
@@ -120,6 +215,7 @@ class SQLQueryWindow:
             self._window = None
             self._query_text = None
             self._result_notebook = None
+            self._query_dropdown = None
 
     def _execute_query(self) -> None:
         """Execute the SQL query and display results."""
