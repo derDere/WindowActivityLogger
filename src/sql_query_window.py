@@ -146,10 +146,12 @@ SELECT name FROM sqlite_master;""")
                 # Split and execute multiple statements
                 statements = [stmt.strip() for stmt in query.split(';') if stmt.strip()]
                 result_count = 0
+                had_success = False
                 
                 for statement in statements:
                     try:
                         cursor.execute(statement)
+                        had_success = True  # Mark that at least one statement succeeded
                         
                         # Check if the statement returns results
                         if cursor.description:
@@ -203,11 +205,20 @@ SELECT name FROM sqlite_master;""")
                         error_label = ttk.Label(error_frame, text=str(e), foreground="red", wraplength=600)
                         error_label.pack(padx=10, pady=10)
                         result_count += 1
-                        raise  # Re-raise to trigger outer error handling
+                        continue  # Continue with next statement instead of raising
 
-                # Commit the transaction if we got here without errors
-                conn.commit()
+                # If at least one statement executed successfully, store the query
+                if had_success and statements:
+                    self._app.configuration.set_last_sql_query(query)
+                    self._app.configuration.save()
+
+                # Commit the transaction if we had any successes
+                if had_success:
+                    conn.commit()
 
         except Exception as e:
-            # Error will already be shown in the result area
-            pass
+            # Handle any unexpected errors
+            error_frame = ttk.Frame(self._result_notebook)
+            self._result_notebook.add(error_frame, text=f"[W.A.L.] - Error")
+            error_label = ttk.Label(error_frame, text=str(e), foreground="red", wraplength=600)
+            error_label.pack(padx=10, pady=10)

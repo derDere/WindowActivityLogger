@@ -21,7 +21,8 @@ class ConfigurationManager:
         self._config: Dict[str, Any] = {
             "database_path": str(self._get_default_database_path()),
             "polling_interval": 30,  # Default 30 seconds
-            "regex_patterns": ["^\\[W\\.A\\.L\\.\\] - .*"]  # Default pattern to ignore our own windows
+            "regex_patterns": ["^\\[W\\.A\\.L\\.\\] - .*"],  # Default pattern to ignore our own windows
+            "last_sql_query": ""  # Store the last successful SQL query
         }
         self._update_handlers: List[Callable[[], None]] = []
 
@@ -140,6 +141,18 @@ class ConfigurationManager:
             patterns: List of regex patterns for title filtering
         """
         self._config["regex_patterns"] = patterns
+
+    def get_last_sql_query(self) -> str:
+        """Get the last successful SQL query."""
+        return self._config.get("last_sql_query", "")
+
+    def set_last_sql_query(self, query: str) -> None:
+        """Set the last successful SQL query.
+
+        Args:
+            query: The SQL query to store
+        """
+        self._config["last_sql_query"] = query
 
     def validate_configuration(self) -> bool:
         """Validate the current configuration.
