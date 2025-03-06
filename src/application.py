@@ -13,6 +13,7 @@ from system_tray import SystemTrayInterface
 from report_window import ReportWindow
 from settings_window import SettingsWindow
 from sql_query_window import SQLQueryWindow
+from db_management_window import DatabaseManagementWindow
 
 if TYPE_CHECKING:
     from db_manager import DatabaseManager
@@ -27,6 +28,7 @@ class Application:
         self._report_window: Optional[ReportWindow] = None
         self._settings_window: Optional[SettingsWindow] = None
         self._sql_query_window: Optional[SQLQueryWindow] = None
+        self._db_management_window: Optional[DatabaseManagementWindow] = None
         self._is_running = False
         self._ui_queue = queue.Queue()
         
@@ -88,6 +90,7 @@ class Application:
             self._report_window = ReportWindow(self._db_manager)
             self._settings_window = SettingsWindow(self._config_manager)
             self._sql_query_window = SQLQueryWindow(self._db_manager)
+            self._db_management_window = DatabaseManagementWindow(self, self._db_manager)
 
             # Initialize system tray
             self._tray_interface = SystemTrayInterface()
@@ -100,6 +103,7 @@ class Application:
             self._tray_interface.set_show_report_callback(self._handle_show_report)
             self._tray_interface.set_show_settings_callback(self._handle_show_settings)
             self._tray_interface.set_show_sql_query_callback(self._handle_show_sql_query)
+            self._tray_interface.set_show_db_management_callback(self._handle_show_db_management)
 
             return True
 
@@ -134,6 +138,8 @@ class Application:
                 self._settings_window.hide()
             if self._sql_query_window:
                 self._sql_query_window.hide()
+            if self._db_management_window:
+                self._db_management_window._on_close()
 
             # Stop background components in reverse order of initialization
             if self._window_monitor:
@@ -240,6 +246,12 @@ class Application:
         if self._sql_query_window:
             # Queue the window show operation to run in main thread
             self._queue_ui_action(lambda: self._sql_query_window.show())
+            
+    def _handle_show_db_management(self) -> None:
+        """Handle show database management window request from system tray."""
+        if self._db_management_window:
+            # Queue the window show operation to run in main thread
+            self._queue_ui_action(lambda: self._db_management_window.show())
 
     def _handle_config_changed(self) -> None:
         """Handle configuration changes from any source."""
