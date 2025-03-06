@@ -60,6 +60,47 @@ class SQLText(tk.Text):
                     self.tag_add("comment", current_index, f"{current_index}+{len(content)}c")
                 current_index = self.search(content, f"{current_index}+1c", tk.END)
 
+class PanedWindowWithMinSize(ttk.PanedWindow):
+    """PanedWindow with minimum size enforcement for panes"""
+    def __init__(self, master=None, **kw):
+        super().__init__(master, **kw)
+        self._min_sizes = {}  # Maps pane widget to minimum size
+        
+    def add(self, child, min_size=0, **kw):
+        """Add a child with minimum size constraint"""
+        super().add(child, **kw)
+        self._min_sizes[child] = min_size
+        
+    def _update_sash_position(self, sash_index):
+        """Update sash position to respect minimum sizes"""
+        if not self._min_sizes:
+            return
+            
+        # Get current pane positions
+        sashes = [self.sashpos(i) for i in range(len(self.panes()) - 1)]
+        
+        # Ensure minimum size for first pane
+        if sash_index == 0 and len(self.panes()) > 0:
+            first_pane = self.panes()[0]
+            min_size = self._min_sizes.get(first_pane, 0)
+            if sashes[0] < min_size:
+                self.sashpos(0, min_size)
+                
+        # Ensure minimum size for middle panes
+        if 0 < sash_index < len(self.panes()) - 1:
+            pane = self.panes()[sash_index]
+            min_size = self._min_sizes.get(pane, 0)
+            if sashes[sash_index] - sashes[sash_index - 1] < min_size:
+                self.sashpos(sash_index, sashes[sash_index - 1] + min_size)
+                
+        # Ensure minimum size for last pane
+        if sash_index == len(self.panes()) - 2 and len(self.panes()) > 1:
+            last_pane = self.panes()[-1]
+            min_size = self._min_sizes.get(last_pane, 0)
+            paned_height = self.winfo_height()
+            if paned_height - sashes[-1] < min_size:
+                self.sashpos(len(sashes) - 1, paned_height - min_size)
+
 class SQLQueryWindow:
     def __init__(self, db_manager: 'DatabaseManager'):
         """Initialize the SQL query window.
@@ -73,6 +114,8 @@ class SQLQueryWindow:
         self._result_notebook: Optional[ttk.Notebook] = None
         self._query_dropdown: Optional[ttk.Combobox] = None
         self._last_edited_query: str = DEFAULT_QUERY
+        self._paned_window: Optional[PanedWindowWithMinSize] = None
+        self._MIN_PANE_SIZE = 50  # Minimum size in pixels
 
     @property
     def _app(self):
@@ -123,12 +166,33 @@ class SQLQueryWindow:
             self._query_dropdown.pack(side=tk.LEFT)
             self._query_dropdown.current(3)  # Default to "Show Tables"
             self._query_dropdown.bind("<<ComboboxSelected>>", self._on_query_selected)
+            
+            # Create vertically oriented paned window for resizable areas
+            self._paned_window = PanedWindowWithMinSize(main_frame, orient=tk.VERTICAL)
+            self._paned_window.pack(fill=tk.BOTH, expand=True)
 
+            # Query frame (top pane)
+            query_frame = ttk.Frame(self._paned_window)
+            
             # Query text area with syntax highlighting
-            self._query_text = SQLText(main_frame, height=10, wrap=tk.WORD)
-            self._query_text.pack(fill=tk.X, pady=(0, 10))
+            self._query_text = SQLText(query_frame, wrap=tk.WORD)
+            self._query_text.pack(fill=tk.BOTH, expand=True)
             self._query_text.insert("1.0", DEFAULT_QUERY)
             self._query_text._highlight()  # Initial highlighting
+            
+            # Results frame (bottom pane)
+            results_frame = ttk.Frame(self._paned_window)
+            
+            # Result notebook for multiple result sets
+            self._result_notebook = ttk.Notebook(results_frame)
+            self._result_notebook.pack(fill=tk.BOTH, expand=True)
+            
+            # Add frames to paned window with minimum sizes
+            self._paned_window.add(query_frame, min_size=self._MIN_PANE_SIZE, weight=1)
+            self._paned_window.add(results_frame, min_size=self._MIN_PANE_SIZE, weight=2)
+            
+            # Bind sash movement to enforce minimum sizes
+            self._paned_window.bind("<ButtonRelease-1>", self._on_sash_moved)
             
             # Initialize last_edited_query with the default
             self._last_edited_query = DEFAULT_QUERY
@@ -136,10 +200,6 @@ class SQLQueryWindow:
             # Track text modifications using a separate handler rather than <<Modified>> event
             # which doesn't work consistently across all platforms
             self._query_text.bind("<KeyRelease>", self._on_text_modified)
-
-            # Result notebook for multiple result sets
-            self._result_notebook = ttk.Notebook(main_frame)
-            self._result_notebook.pack(fill=tk.BOTH, expand=True)
 
             # Center window
             self._window.update_idletasks()
@@ -151,6 +211,12 @@ class SQLQueryWindow:
         else:
             self._window.lift()
             self._window.focus_force()
+    
+    def _on_sash_moved(self, event):
+        """Handle sash movement to enforce minimum sizes"""
+        if self._paned_window:
+            for i in range(len(self._paned_window.panes()) - 1):
+                self._paned_window._update_sash_position(i)
 
     def _on_text_modified(self, event=None):
         """Handle text modifications."""
@@ -216,6 +282,7 @@ class SQLQueryWindow:
             self._query_text = None
             self._result_notebook = None
             self._query_dropdown = None
+            self._paned_window = None
 
     def _execute_query(self) -> None:
         """Execute the SQL query and display results."""
