@@ -25,7 +25,7 @@ class SystemTrayInterface:
         """Initialize the system tray icon and menu."""
         try:
             # Load icon
-            icon_path = Path(__file__).parent / "resources" / "icon.ico"
+            icon_path = Path(__file__).parent / "resources" / "icon_small.png"
             image = Image.open(icon_path)
 
             # Create menu
