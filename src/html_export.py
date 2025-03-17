@@ -191,7 +191,7 @@ class HTMLExportGenerator:
             draw.text((center, center), "No data available", 
                      fill='#666', anchor="mm", font=font)
             # Resize back to original size with antialiasing
-            return image.resize((size, size), Image.ANTIALIAS)
+            return image.resize((size, size), Image.LANCZOS)
 
         # Calculate total for percentages
         total = sum(duration for _, duration in chart_data)
@@ -245,7 +245,7 @@ class HTMLExportGenerator:
             draw.text((legend_x + 50, y + 16), text, fill='#333', anchor="lm", font=font)
 
         # Resize the image back to original size with antialiasing
-        return image.resize((size, size), Image.ANTIALIAS)
+        return image.resize((size, size), Image.LANCZOS)
 
     def _generate_project_table(self, project_data: List[Tuple[int, str, float]]) -> str:
         """Generate HTML table for project summary."""
