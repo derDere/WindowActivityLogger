@@ -41,7 +41,7 @@ class DatabaseManagementWindow:
 
         # Create window
         self._window = tk.Toplevel()
-        self._window.title("Database Management")
+        self._window.title("[W.A.L.] - Database Management")
         self._window.minsize(800, 600)
         self._window.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -414,7 +414,7 @@ class DatabaseManagementWindow:
         """Add a new project."""
         # Show dialog to get project name
         project_name = simpledialog.askstring(
-            "Add Project", 
+            "[W.A.L.] - Add Project", 
             "Enter new project name:",
             parent=self._window
         )
@@ -433,7 +433,7 @@ class DatabaseManagementWindow:
                     self._projects_tree.see(str(project_id))
             else:
                 messagebox.showerror(
-                    "Error",
+                    "[W.A.L.] - Error",
                     "Failed to create project. The name may already exist.",
                     parent=self._window
                 )
@@ -442,7 +442,7 @@ class DatabaseManagementWindow:
         """Rename the selected project."""
         if not self._selected_project_id:
             messagebox.showwarning(
-                "No Selection",
+                "[W.A.L.] - No Selection",
                 "Please select a project to rename.",
                 parent=self._window
             )
@@ -451,7 +451,7 @@ class DatabaseManagementWindow:
         # Check if this is the default project (ID=1)
         if self._selected_project_id == 1:
             messagebox.showwarning(
-                "Cannot Rename",
+                "[W.A.L.] - Cannot Rename",
                 "The default 'Misc' project cannot be renamed.",
                 parent=self._window
             )
@@ -462,7 +462,7 @@ class DatabaseManagementWindow:
         
         # Show dialog to get new project name
         new_name = simpledialog.askstring(
-            "Rename Project", 
+            "[W.A.L.] - Rename Project", 
             "Enter new project name:",
             parent=self._window,
             initialvalue=current_name
@@ -477,7 +477,7 @@ class DatabaseManagementWindow:
                 self._refresh_data()
             else:
                 messagebox.showerror(
-                    "Error",
+                    "[W.A.L.] - Error",
                     "Failed to rename project. The name may already exist.",
                     parent=self._window
                 )
@@ -486,7 +486,7 @@ class DatabaseManagementWindow:
         """Delete the selected project."""
         if not self._selected_project_id:
             messagebox.showwarning(
-                "No Selection",
+                "[W.A.L.] - No Selection",
                 "Please select a project to delete.",
                 parent=self._window
             )
@@ -495,7 +495,7 @@ class DatabaseManagementWindow:
         # Check if this is the default project (ID=1)
         if self._selected_project_id == 1:
             messagebox.showwarning(
-                "Cannot Delete",
+                "[W.A.L.] - Cannot Delete",
                 "The default 'Misc' project cannot be deleted.",
                 parent=self._window
             )
@@ -506,7 +506,7 @@ class DatabaseManagementWindow:
         
         # Confirm deletion
         result = messagebox.askyesnocancel(
-            "Delete Project",
+            "[W.A.L.] - Delete Project",
             f"Are you sure you want to delete project '{project_name}'?\n\n"
             f"- Click 'Yes' to delete the project and reassign its titles to 'Misc'\n"
             f"- Click 'No' to delete the project AND all its window titles\n"
@@ -528,7 +528,7 @@ class DatabaseManagementWindow:
             self._selected_project_id = None
         else:
             messagebox.showerror(
-                "Error",
+                "[W.A.L.] - Error",
                 "Failed to delete project.",
                 parent=self._window
             )
@@ -537,7 +537,7 @@ class DatabaseManagementWindow:
         """Delete selected window titles."""
         if not self._selected_title_ids:
             messagebox.showwarning(
-                "No Selection",
+                "[W.A.L.] - No Selection",
                 "Please select titles to delete.",
                 parent=self._window
             )
@@ -546,7 +546,7 @@ class DatabaseManagementWindow:
         # Confirm deletion
         count = len(self._selected_title_ids)
         result = messagebox.askyesno(
-            "Delete Titles",
+            "[W.A.L.] - Delete Titles",
             f"Are you sure you want to delete {count} window title{'s' if count > 1 else ''}?\n\n"
             f"This will also delete ALL log entries for these titles.",
             parent=self._window
@@ -564,13 +564,13 @@ class DatabaseManagementWindow:
         # Report results
         if success_count == count:
             messagebox.showinfo(
-                "Success",
+                "[W.A.L.] - Success",
                 f"Successfully deleted {success_count} window title{'s' if success_count > 1 else ''}.",
                 parent=self._window
             )
         else:
             messagebox.showwarning(
-                "Partial Success",
+                "[W.A.L.] - Partial Success",
                 f"Deleted {success_count} out of {count} window titles.",
                 parent=self._window
             )
@@ -585,7 +585,7 @@ class DatabaseManagementWindow:
         """Reassign selected window titles to a different project."""
         if not self._selected_title_ids:
             messagebox.showwarning(
-                "No Selection",
+                "[W.A.L.] - No Selection",
                 "Please select titles to reassign.",
                 parent=self._window
             )
@@ -638,13 +638,13 @@ class DatabaseManagementWindow:
                 count = len(self._selected_title_ids)
                 if success_count == count:
                     messagebox.showinfo(
-                        "Success",
+                        "[W.A.L.] - Success",
                         f"Successfully reassigned {success_count} window title{'s' if success_count > 1 else ''}.",
                         parent=self._window
                     )
                 else:
                     messagebox.showwarning(
-                        "Partial Success",
+                        "[W.A.L.] - Partial Success",
                         f"Reassigned {success_count} out of {count} window titles.",
                         parent=self._window
                     )
@@ -676,7 +676,7 @@ class DatabaseManagementWindow:
         """Merge selected window titles into a new one."""
         if len(self._selected_title_ids) < 2:
             messagebox.showwarning(
-                "Insufficient Selection",
+                "[W.A.L.] - Insufficient Selection",
                 "Please select at least two titles to merge.",
                 parent=self._window
             )
@@ -702,7 +702,7 @@ class DatabaseManagementWindow:
         
         # Show confirmation dialog
         result = messagebox.askyesno(
-            "Merge Titles",
+            "[W.A.L.] - Merge Titles",
             f"Merge {len(merge_ids)} titles into '{target_title}'?\n\n"
             f"This will move all log entries to the title '{target_title}' and delete the other titles.",
             parent=self._window
@@ -716,7 +716,7 @@ class DatabaseManagementWindow:
         
         if success:
             messagebox.showinfo(
-                "Success",
+                "[W.A.L.] - Success",
                 f"Successfully merged {len(merge_ids)} titles into '{target_title}'.",
                 parent=self._window
             )
@@ -728,7 +728,7 @@ class DatabaseManagementWindow:
             self._selected_title_ids = set()
         else:
             messagebox.showerror(
-                "Error",
+                "[W.A.L.] - Error",
                 "Failed to merge titles.",
                 parent=self._window
             )
